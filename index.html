@@ -1,0 +1,627 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Weight Notes</title>
+<meta name="description" content="A bare-bones tracker for the weight you lift on each exercise and how it climbs over time.">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#eceeea" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#111416" media="(prefers-color-scheme: dark)">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Weight Notes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<style>
+/* Layout: one narrow column, phone-first. Home is a list of exercises, each row
+   showing current weight and progress; tapping a row opens its history. */
+:root {
+  --bg: #eceeea;
+  --surface: #ffffff;
+  --ink: #14181a;
+  --muted: #5b656a;
+  --line: #d6dbd7;
+  --accent: #cf2a22;
+  --on-accent: #ffffff;
+  --up: #1b7a44;
+  --down: #9a5a08;
+  --chip: #e4e8e4;
+  --stale1: #8a6700;
+  --stale2: #b04a0a;
+  --stale3: #c4271f;
+
+  --font-body: -apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui, 'Segoe UI', Roboto, sans-serif;
+  --font-num: 'Avenir Next Condensed', 'Barlow Condensed', 'Roboto Condensed', 'Arial Narrow', 'Helvetica Neue', sans-serif;
+  color-scheme: light dark;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #111416;
+    --surface: #1a1f22;
+    --ink: #eceeea;
+    --muted: #97a1a6;
+    --line: #2b3337;
+    --accent: #ff5d52;
+    --on-accent: #16191b;
+    --up: #5bd08a;
+    --down: #e8a74b;
+    --chip: #262d31;
+    --stale1: #e8c64a;
+    --stale2: #f4903f;
+    --stale3: #ff6b60;
+  }
+}
+
+* { box-sizing: border-box; }
+html { background: var(--bg); -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: 16px;
+  line-height: 1.4;
+  -webkit-tap-highlight-color: transparent;
+  min-height: 100vh;
+  min-height: 100dvh;
+  padding-top: max(20px, env(safe-area-inset-top, 0px));
+  padding-bottom: max(40px, calc(env(safe-area-inset-bottom, 0px) + 24px));
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+.app { max-width: 480px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px; }
+button, input { font: inherit; color: inherit; touch-action: manipulation; }
+button { cursor: pointer; }
+a { color: inherit; text-decoration: none; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.vh { position: absolute; width: 1px; height: 1px; opacity: 0; overflow: hidden; pointer-events: none; }
+
+/* header */
+.top { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 44px; }
+.brand { font-family: var(--font-num); font-weight: 700; font-size: 22px; letter-spacing: .08em; text-transform: uppercase; }
+.back { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; font-weight: 500; color: var(--muted); }
+.pill { display: inline-flex; align-items: center; min-height: 36px; padding: 0 14px; background: var(--chip); border-radius: 8px; font-weight: 500; font-size: 15px; color: var(--ink); }
+.seg { display: inline-flex; background: var(--chip); border-radius: 8px; padding: 3px; }
+.seg button { border: 0; background: transparent; min-width: 44px; min-height: 34px; border-radius: 6px; font-family: var(--font-num); font-weight: 600; font-size: 16px; letter-spacing: .04em; color: var(--muted); }
+.seg button[aria-pressed="true"] { background: var(--surface); color: var(--ink); box-shadow: 0 1px 2px rgba(0,0,0,.12); }
+.seg.wide { display: flex; }
+.seg.wide button { flex: 1; min-height: 44px; font-size: 20px; }
+.page-title { margin: 0; font-size: 26px; line-height: 1.15; font-weight: 600; }
+
+/* home list */
+.list { display: flex; flex-direction: column; gap: 10px; margin: 0; padding: 0; list-style: none; }
+.row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 16px; align-items: center; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; }
+.row:active { background: var(--chip); }
+.row .name { font-weight: 600; font-size: 18px; overflow-wrap: anywhere; }
+.row .brand-line { color: var(--muted); font-size: 14px; overflow-wrap: anywhere; }
+.row .w { font-family: var(--font-num); font-weight: 700; font-size: 40px; line-height: 1; text-align: right; font-variant-numeric: tabular-nums; }
+.row .w small { font-size: 16px; font-weight: 500; color: var(--muted); margin-left: 3px; }
+.prog { font-family: var(--font-num); font-weight: 600; font-size: 18px; font-variant-numeric: tabular-nums; }
+.prog.up { color: var(--up); }
+.prog.down { color: var(--down); }
+.prog.flat { color: var(--muted); }
+.row .prog-wrap { grid-column: 1 / -1; display: flex; gap: 8px; align-items: baseline; justify-content: space-between; }
+.since { color: var(--muted); font-size: 13px; }
+.stale { display: inline-flex; align-items: center; gap: 6px; color: var(--muted); font-size: 13px; }
+.stale i { display: none; width: 8px; height: 8px; border-radius: 50%; background: currentColor; }
+.stale.s1 { color: var(--stale1); }
+.stale.s2 { color: var(--stale2); }
+.stale.s3 { color: var(--stale3); font-weight: 600; }
+.stale.s1 i, .stale.s2 i, .stale.s3 i { display: inline-block; }
+
+.btn { display: flex; align-items: center; justify-content: center; width: 100%; min-height: 52px; border-radius: 10px; border: 1px solid transparent; font-weight: 600; font-size: 17px; }
+.btn.primary { background: var(--accent); color: var(--on-accent); }
+.btn.primary:disabled { opacity: .4; cursor: default; }
+.btn.ghost { background: transparent; border-color: var(--line); color: var(--ink); }
+.btn.sm { min-height: 44px; font-size: 15px; }
+.btn.big { min-height: 68px; font-size: 22px; background: var(--surface); border-color: var(--line); color: var(--ink); }
+.btn.big:active { background: var(--chip); }
+.link { background: none; border: 0; color: var(--muted); min-height: 44px; padding: 0 4px; font-size: 15px; text-decoration: underline; text-underline-offset: 3px; }
+.link:disabled { opacity: .35; cursor: default; text-decoration: none; }
+.note { display: flex; justify-content: space-between; align-items: center; gap: 12px; color: var(--muted); font-size: 14px; }
+.empty { text-align: center; color: var(--muted); padding: 36px 8px; }
+.hint { margin: 0; color: var(--muted); font-size: 14px; }
+.hint.center { text-align: center; }
+.msg { margin: 0; font-size: 15px; font-weight: 500; }
+.msg.ok { color: var(--up); }
+.msg.err { color: var(--stale3); }
+
+/* first-run setup */
+.setup { display: flex; flex-direction: column; gap: 14px; padding-top: 12vh; }
+.setup h1 { margin: 0; font-size: 28px; line-height: 1.15; font-weight: 600; }
+
+/* detail */
+.hero { display: flex; flex-direction: column; gap: 4px; }
+.hero h1 { margin: 0; font-size: 26px; line-height: 1.15; font-weight: 600; overflow-wrap: anywhere; }
+.hero .brand-line { color: var(--muted); }
+.big { font-family: var(--font-num); font-weight: 700; font-size: 104px; line-height: .95; letter-spacing: -.01em; font-variant-numeric: tabular-nums; margin-top: 10px; }
+.big small { font-size: 28px; font-weight: 500; color: var(--muted); margin-left: 6px; letter-spacing: 0; }
+.change { display: flex; gap: 10px; align-items: baseline; flex-wrap: wrap; }
+.change .prog { font-size: 24px; }
+.spark { width: 100%; height: auto; display: block; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; }
+.spark .line { fill: none; stroke: var(--ink); stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
+.spark .base { stroke: var(--line); stroke-width: 1; stroke-dasharray: 3 4; }
+.spark .dot { fill: var(--accent); }
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 16px; display: flex; flex-direction: column; gap: 14px; }
+.panel label, .panel h2 { margin: 0; font-size: 13px; color: var(--muted); text-transform: uppercase; letter-spacing: .08em; font-weight: 500; }
+.field { display: flex; align-items: center; gap: 10px; }
+.field input { flex: 1; min-width: 0; background: var(--bg); border: 1px solid var(--line); border-radius: 8px; min-height: 52px; padding: 0 14px; font-family: var(--font-num); font-weight: 600; font-size: 30px; font-variant-numeric: tabular-nums; }
+.field .unit { font-family: var(--font-num); font-weight: 500; font-size: 20px; color: var(--muted); }
+.field input.text { font-family: var(--font-body); font-weight: 500; font-size: 17px; }
+.chips { display: flex; flex-direction: column; gap: 8px; }
+.chip-row { display: flex; gap: 8px; }
+.chip { min-width: 64px; min-height: 44px; padding: 0 14px; background: var(--chip); border: 1px solid var(--line); border-radius: 8px; font-family: var(--font-num); font-weight: 600; font-size: 20px; font-variant-numeric: tabular-nums; }
+.chip:active { background: var(--line); }
+.chip-row .chip { flex: 1 1 0; min-width: 0; padding: 0 6px; }
+.pvrow { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.preview { font-family: var(--font-num); font-size: 20px; font-weight: 500; color: var(--muted); font-variant-numeric: tabular-nums; min-height: 26px; }
+.preview b { color: var(--ink); font-weight: 700; }
+.stack { display: flex; flex-direction: column; gap: 10px; }
+.history h2 { margin: 0 0 6px; font-size: 13px; font-weight: 500; color: var(--muted); text-transform: uppercase; letter-spacing: .08em; }
+.history ul { list-style: none; margin: 0; padding: 0; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; }
+.history li { display: grid; grid-template-columns: 1fr auto auto; gap: 14px; align-items: baseline; padding: 12px 16px; border-top: 1px solid var(--line); }
+.history li:first-child { border-top: 0; }
+.history .d { color: var(--muted); }
+.history .hw { font-family: var(--font-num); font-weight: 700; font-size: 24px; font-variant-numeric: tabular-nums; }
+.history .hd { font-family: var(--font-num); font-weight: 600; font-size: 18px; min-width: 52px; text-align: right; font-variant-numeric: tabular-nums; }
+.foot { display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; }
+.confirm { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; color: var(--muted); font-size: 15px; }
+.confirm .btn { width: auto; padding: 0 16px; }
+.confirm-block { display: flex; flex-direction: column; gap: 12px; padding-top: 4px; border-top: 1px solid var(--line); }
+.confirm-block p { margin: 12px 0 0; font-size: 15px; }
+.danger { background: var(--accent); color: var(--on-accent); }
+
+@media (prefers-reduced-motion: no-preference) {
+  .row, .btn, .chip { transition: background-color .12s ease; }
+}
+@media (max-width: 380px) { .big { font-size: 88px; } .row .w { font-size: 34px; } }
+</style>
+</head>
+<body>
+<div class="app" id="app"></div>
+<noscript><p style="padding:24px;font-family:sans-serif">Weight Notes needs JavaScript turned on.</p></noscript>
+
+<script>
+(function () {
+  'use strict';
+
+  var KEY = 'weight-notes-v1';
+  var storageOK = true;
+
+  /* ---------- helpers ---------- */
+  function iso(d) { return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
+  function uid() { return 'x' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6); }
+  function num(v) { return String(parseFloat(Number(v).toFixed(2))); }
+  function sign(v) { return v > 0 ? '+' : v < 0 ? '−' : ''; }
+  function esc(s) { return String(s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+  function dateLabel(s) {
+    var p = s.split('-'); var d = new Date(+p[0], +p[1] - 1, +p[2]);
+    var o = { month: 'short', day: 'numeric' };
+    if (d.getFullYear() !== new Date().getFullYear()) o.year = 'numeric';
+    return d.toLocaleDateString(undefined, o);
+  }
+
+  /* ---------- data ---------- */
+  function sanitizeExercises(list) {
+    var out = [], seen = {};
+    if (!Array.isArray(list)) return out;
+    list.slice(0, 500).forEach(function (e) {
+      if (!e || typeof e !== 'object' || !Array.isArray(e.entries)) return;
+      var name = String(e.name == null ? '' : e.name).trim().slice(0, 60);
+      if (!name) return;
+      var entries = [];
+      e.entries.slice(0, 5000).forEach(function (x) {
+        if (!x || typeof x !== 'object') return;
+        var w = Number(x.w), d = String(x.d || '');
+        if (/^\d{4}-\d{2}-\d{2}$/.test(d) && isFinite(w) && w > 0 && w < 10000) entries.push({ d: d, w: Math.round(w * 100) / 100 });
+      });
+      if (!entries.length) return;
+      var id = String(e.id || '');
+      if (!/^x[a-z0-9]{2,31}$/i.test(id) || seen[id]) id = uid();
+      seen[id] = 1;
+      out.push({ id: id, name: name, brand: String(e.brand == null ? '' : e.brand).trim().slice(0, 60), entries: entries });
+    });
+    return out;
+  }
+
+  function sanitizeBackup(o) {
+    if (!o || o.app !== 'weight-notes' || !Array.isArray(o.exercises)) return null;
+    if (o.unit !== 'lb' && o.unit !== 'kg') return null;
+    var ex = sanitizeExercises(o.exercises);
+    if (o.exercises.length > 0 && ex.length === 0) return null;
+    return { unit: o.unit, exercises: ex };
+  }
+
+  function load() {
+    var s = null;
+    try { localStorage.setItem('__wn', '1'); localStorage.removeItem('__wn'); } catch (e) { storageOK = false; }
+    try { var r = localStorage.getItem(KEY); if (r) s = JSON.parse(r); } catch (e) { s = null; }
+    if (!s || typeof s !== 'object') s = {};
+    return {
+      unit: s.unit === 'kg' || s.unit === 'lb' ? s.unit : null,
+      exercises: sanitizeExercises(s.exercises),
+      lastBackup: +s.lastBackup || 0,
+      hintDismissed: !!s.hintDismissed
+    };
+  }
+
+  var S = load();
+  function persist() {
+    try { localStorage.setItem(KEY, JSON.stringify(S)); storageOK = true; } catch (e) { storageOK = false; }
+  }
+
+  var ui = { editing: false, confirmDel: false, stack: [], unitPending: null, pending: null, confirmWipe: false, msg: null };
+  function resetUi() { ui.editing = false; ui.confirmDel = false; ui.stack = []; ui.unitPending = null; ui.pending = null; ui.confirmWipe = false; ui.msg = null; }
+
+  /* Days without a weight change before a row starts to warn: yellow, orange, red. */
+  var STALE_DAYS = [28, 56, 84];
+  function daysSince(s) {
+    var p = s.split('-'); var d = new Date(+p[0], +p[1] - 1, +p[2]);
+    var t = new Date(); t.setHours(0, 0, 0, 0);
+    return Math.round((t - d) / 86400000);
+  }
+  function age(ex) { return daysSince(ex.entries[ex.entries.length - 1].d); }
+  function staleLevel(n) { return n >= STALE_DAYS[2] ? 3 : n >= STALE_DAYS[1] ? 2 : n >= STALE_DAYS[0] ? 1 : 0; }
+  function ago(n) {
+    if (n <= 0) return 'today';
+    if (n === 1) return 'yesterday';
+    if (n < 14) return n + ' days ago';
+    if (n < 60) return Math.floor(n / 7) + ' weeks ago';
+    return Math.floor(n / 30) + ' months ago';
+  }
+
+  function stats(ex) {
+    var first = ex.entries[0].w, cur = ex.entries[ex.entries.length - 1].w;
+    var delta = parseFloat((cur - first).toFixed(2));
+    var pct = first ? Math.round((cur - first) / first * 100) : 0;
+    return { first: first, cur: cur, delta: delta, pct: pct, cls: delta > 0 ? 'up' : delta < 0 ? 'down' : 'flat', since: ex.entries[0].d };
+  }
+  function progText(st) {
+    if (st.delta === 0) return 'No change yet';
+    return sign(st.delta) + num(Math.abs(st.delta)) + ' ' + S.unit + ' · ' + sign(st.pct || st.delta) + Math.abs(st.pct) + '%';
+  }
+  function progShort(st) {
+    if (st.delta === 0) return 'Starting weight';
+    return sign(st.delta) + num(Math.abs(st.delta)) + ' ' + S.unit;
+  }
+
+  /* ---------- views ---------- */
+  function header(left, right) { return '<div class="top">' + left + (right || '') + '</div>'; }
+
+  function showInstallHint() {
+    if (S.hintDismissed) return false;
+    var ios = /iphone|ipad|ipod/i.test(navigator.userAgent);
+    var standalone = window.navigator.standalone || (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches);
+    return ios && !standalone;
+  }
+
+  function viewSetup() {
+    return '<div class="setup"><div class="brand">Weight Notes</div>' +
+      '<h1>Which unit do you lift in?</h1>' +
+      '<p class="hint">Pick one. Every weight is saved and shown in it, with no conversions. You can change it later in Settings.</p>' +
+      '<div class="stack">' +
+      '<button type="button" class="btn big" data-act="setup-unit" data-u="lb">Pounds (lb)</button>' +
+      '<button type="button" class="btn big" data-act="setup-unit" data-u="kg">Kilograms (kg)</button></div></div>';
+  }
+
+  function viewHome() {
+    var h = header('<span class="brand">Weight Notes</span>', '<a class="pill" href="#settings">Settings</a>');
+    if (!S.exercises.length) {
+      h += '<div class="empty">Nothing here yet.<br>Add the first exercise you train.</div>';
+    } else {
+      h += '<ul class="list">' + S.exercises.map(function (ex) {
+        var st = stats(ex);
+        return '<li><a class="row" href="#' + ex.id + '">' +
+          '<div><div class="name">' + esc(ex.name) + '</div>' + (ex.brand ? '<div class="brand-line">' + esc(ex.brand) + '</div>' : '') + '</div>' +
+          '<div class="w">' + num(st.cur) + '<small>' + S.unit + '</small></div>' +
+          '<div class="prog-wrap"><span class="prog ' + st.cls + '">' + progShort(st) + '</span><span class="stale s' + staleLevel(age(ex)) + '"><i></i>Updated ' + ago(age(ex)) + '</span></div>' +
+          '</a></li>';
+      }).join('') + '</ul>';
+    }
+    h += '<a class="btn primary" href="#new">Add exercise</a>';
+    if (!storageOK) h += '<p class="msg err">This browser can’t save data (private browsing?). Export a backup in Settings before you close the app.</p>';
+    if (showInstallHint()) h += '<div class="note"><span>Install it first: Share, then Add to Home Screen. The installed app keeps its own data, separate from Safari.</span><button type="button" class="link" data-act="hint-dismiss">Got it</button></div>';
+    return h;
+  }
+
+  function viewNew() {
+    return header('<a class="back" href="#">← Back</a>') +
+      '<form class="panel" id="newForm" autocomplete="off">' +
+      '<div class="stack"><label for="nName">Exercise</label><div class="field"><input class="text" id="nName" type="text" placeholder="Chest press" maxlength="60" required></div></div>' +
+      '<div class="stack"><label for="nBrand">Brand or note (optional)</label><div class="field"><input class="text" id="nBrand" type="text" placeholder="Hammer Strength" maxlength="60"></div></div>' +
+      '<div class="stack"><label for="nWeight">Current weight</label><div class="field"><input id="nWeight" type="number" inputmode="decimal" step="any" min="0" placeholder="0" required><span class="unit">' + S.unit + '</span></div></div>' +
+      '<button class="btn primary" type="submit">Save exercise</button></form>';
+  }
+
+  function spark(entries) {
+    if (entries.length < 2) return '';
+    var vals = entries.map(function (e) { return e.w; });
+    var W = 320, H = 88, pad = 14;
+    var min = Math.min.apply(null, vals), max = Math.max.apply(null, vals), rng = (max - min) || 1;
+    function x(i) { return pad + (W - 2 * pad) * (i / (vals.length - 1)); }
+    function y(v) { return H - pad - (H - 2 * pad) * ((v - min) / rng); }
+    var d = 'M' + x(0).toFixed(1) + ' ' + y(vals[0]).toFixed(1);
+    for (var i = 1; i < vals.length; i++) d += ' H' + x(i).toFixed(1) + ' V' + y(vals[i]).toFixed(1);
+    var last = vals.length - 1;
+    return '<svg class="spark" viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="Weight over time">' +
+      '<line class="base" x1="' + pad + '" x2="' + (W - pad) + '" y1="' + (H - pad) + '" y2="' + (H - pad) + '"/>' +
+      '<path class="line" d="' + d + '"/>' +
+      '<circle class="dot" cx="' + x(last).toFixed(1) + '" cy="' + y(vals[last]).toFixed(1) + '" r="5"/></svg>';
+  }
+
+  function chipsFor() { return S.unit === 'lb' ? [2.5, 5, 10, 20] : [1.25, 2.5, 5, 10]; }
+
+  function viewDetail(ex) {
+    var st = stats(ex);
+    var h = header('<a class="back" href="#">← All exercises</a>');
+    h += '<div class="hero"><h1>' + esc(ex.name) + '</h1>' + (ex.brand ? '<div class="brand-line">' + esc(ex.brand) + '</div>' : '') +
+      '<div class="big">' + num(st.cur) + '<small>' + S.unit + '</small></div>' +
+      '<div class="change"><span class="prog ' + st.cls + '">' + progText(st) + '</span><span class="since">since ' + dateLabel(st.since) + ' (' + num(st.first) + ' ' + S.unit + ')</span></div></div>';
+    h += spark(ex.entries);
+
+    if (ui.editing) {
+      h += '<div class="panel"><div class="stack"><label for="uWeight">New weight</label>' +
+        '<div class="field"><input id="uWeight" type="number" inputmode="decimal" step="any" min="0" value="' + num(st.cur) + '"><span class="unit">' + S.unit + '</span></div></div>' +
+        '<div class="chips">' + ['', '-'].map(function (sg) {
+          return '<div class="chip-row">' + chipsFor().map(function (c) {
+            return '<button type="button" class="chip" data-act="chip" data-v="' + sg + c + '" aria-label="' + (sg ? 'Subtract ' : 'Add ') + c + '">' + (sg ? '−' : '+') + c + '</button>';
+          }).join('') + '</div>';
+        }).join('') + '</div>' +
+        '<div class="pvrow"><div class="preview" id="uPreview" aria-live="polite"></div><button type="button" class="link" id="uUndo" data-act="undo-chip" disabled>Undo</button></div>' +
+        '<div class="stack"><button type="button" class="btn primary" id="uSave" data-act="save-weight">Save new weight</button>' +
+        '<button type="button" class="btn ghost sm" data-act="cancel-edit">Cancel</button></div></div>';
+    } else {
+      h += '<button type="button" class="btn primary" data-act="edit">Update weight</button>';
+    }
+
+    h += '<div class="history"><h2>History</h2><ul>' + ex.entries.slice().reverse().map(function (e, i) {
+      var idx = ex.entries.length - 1 - i;
+      var dd = idx > 0 ? parseFloat((e.w - ex.entries[idx - 1].w).toFixed(2)) : null;
+      var cls = dd === null ? 'flat' : dd > 0 ? 'up' : dd < 0 ? 'down' : 'flat';
+      var txt = dd === null ? 'Start' : dd === 0 ? '0' : sign(dd) + num(Math.abs(dd));
+      return '<li><span class="d">' + dateLabel(e.d) + '</span><span class="hw">' + num(e.w) + '</span><span class="hd prog ' + cls + '">' + txt + '</span></li>';
+    }).join('') + '</ul></div>';
+
+    h += '<div class="foot">';
+    h += ex.entries.length > 1 ? '<button type="button" class="link" data-act="undo">Undo last update</button>' : '<span></span>';
+    if (ui.confirmDel) {
+      h += '<div class="confirm">Delete this exercise?<button type="button" class="btn danger sm" data-act="delete-yes">Delete</button><button type="button" class="btn ghost sm" data-act="delete-no">Keep</button></div>';
+    } else {
+      h += '<button type="button" class="link" data-act="delete">Delete exercise</button>';
+    }
+    h += '</div>';
+    return h;
+  }
+
+  function viewSettings() {
+    var h = header('<a class="back" href="#">← Back</a>') + '<h1 class="page-title">Settings</h1>';
+
+    h += '<section class="panel"><h2>Weight unit</h2><div class="seg wide" role="group" aria-label="Weight unit">' +
+      ['lb', 'kg'].map(function (u) { return '<button type="button" data-act="unit-pick" data-u="' + u + '" aria-pressed="' + (S.unit === u) + '">' + u + '</button>'; }).join('') + '</div>';
+    if (ui.unitPending) {
+      var to = ui.unitPending;
+      h += '<div class="confirm-block"><p>Switch to ' + to + '? Convert your saved weights (rounded to the nearest ' + (to === 'kg' ? '0.25 kg' : '0.5 lb') + '), or keep the numbers and only change the label.</p>' +
+        '<div class="stack"><button type="button" class="btn primary sm" data-act="unit-convert">Convert weights</button>' +
+        '<button type="button" class="btn ghost sm" data-act="unit-keep">Keep numbers</button>' +
+        '<button type="button" class="btn ghost sm" data-act="unit-cancel">Cancel</button></div></div>';
+    } else {
+      h += '<p class="hint">Weights are saved exactly as you type them, so there are no conversion decimals.</p>';
+    }
+    h += '</section>';
+
+    var last = S.lastBackup ? new Date(S.lastBackup).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) : 'never';
+    h += '<section class="panel"><h2>Backup</h2><p class="hint">Last backup: ' + last + '. Your records live only on this device, so export a copy now and then.</p>' +
+      '<div class="stack"><button type="button" class="btn ghost sm" data-act="export">Export backup</button>' +
+      '<button type="button" class="btn ghost sm" data-act="import">Import backup</button>' +
+      '<input class="vh" id="importFile" type="file" accept="application/json,.json" tabindex="-1" aria-label="Choose backup file"></div>';
+    if (ui.pending) {
+      h += '<div class="confirm-block"><p>Replace your current data (' + S.exercises.length + ' exercise' + (S.exercises.length === 1 ? '' : 's') + ') with this backup (' +
+        ui.pending.exercises.length + ' exercise' + (ui.pending.exercises.length === 1 ? '' : 's') + ', in ' + ui.pending.unit + ')?</p>' +
+        '<div class="stack"><button type="button" class="btn primary sm" data-act="import-yes">Replace my data</button>' +
+        '<button type="button" class="btn ghost sm" data-act="import-no">Cancel</button></div></div>';
+    }
+    if (ui.msg) h += '<p class="msg ' + ui.msg.t + '" role="status">' + esc(ui.msg.s) + '</p>';
+    h += '</section>';
+
+    h += '<section class="panel"><h2>Data</h2>';
+    if (ui.confirmWipe) {
+      h += '<div class="confirm">Delete every exercise?<button type="button" class="btn danger sm" data-act="wipe-yes">Delete all</button><button type="button" class="btn ghost sm" data-act="wipe-no">Keep</button></div>';
+    } else {
+      h += '<button type="button" class="btn ghost sm" data-act="wipe">Delete all exercises</button>';
+    }
+    h += '</section><p class="hint center">Weight Notes · no account, no cloud. Data stays on this device.</p>';
+    return h;
+  }
+
+  /* ---------- render & routing ---------- */
+  var app = document.getElementById('app');
+  function current() {
+    var id = location.hash.replace('#', '');
+    if (id === 'new') return { type: 'new' };
+    if (id === 'settings') return { type: 'settings' };
+    var ex = S.exercises.filter(function (e) { return e.id === id; })[0];
+    return ex ? { type: 'detail', ex: ex } : { type: 'home' };
+  }
+  function render() {
+    if (!S.unit) { app.innerHTML = viewSetup(); return; }
+    var c = current();
+    app.innerHTML = c.type === 'new' ? viewNew() : c.type === 'settings' ? viewSettings() : c.type === 'detail' ? viewDetail(c.ex) : viewHome();
+    if (c.type === 'detail' && ui.editing) updatePreview();
+  }
+
+  function updatePreview() {
+    var c = current(); if (c.type !== 'detail') return;
+    var inp = document.getElementById('uWeight'), pv = document.getElementById('uPreview'), btn = document.getElementById('uSave');
+    if (!inp || !pv) return;
+    var ub = document.getElementById('uUndo'); if (ub) ub.disabled = !ui.stack.length;
+    var v = parseFloat(inp.value), cur = c.ex.entries[c.ex.entries.length - 1].w;
+    if (!(v > 0)) { pv.textContent = ''; btn.disabled = true; return; }
+    var d = parseFloat((v - cur).toFixed(2));
+    btn.disabled = d === 0;
+    pv.innerHTML = '<b>' + num(cur) + '</b> → <b>' + num(v) + '</b> ' + S.unit + (d !== 0 ? ' (' + sign(d) + num(Math.abs(d)) + ')' : '');
+  }
+
+  /* ---------- backup ---------- */
+  function backupJson() {
+    return JSON.stringify({ app: 'weight-notes', version: 1, exportedAt: new Date().toISOString(), unit: S.unit, exercises: S.exercises }, null, 2);
+  }
+  function markBackup() { S.lastBackup = Date.now(); persist(); }
+
+  function exportBackup() {
+    var json = backupJson();
+    var name = 'weight-notes-backup-' + iso(new Date()) + '.json';
+    var file = null;
+    try { file = new File([json], name, { type: 'application/json' }); } catch (e) { file = null; }
+
+    function download() {
+      try {
+        var url = URL.createObjectURL(new Blob([json], { type: 'application/json' }));
+        var a = document.createElement('a');
+        a.href = url; a.download = name; a.style.display = 'none';
+        document.body.appendChild(a); a.click(); a.remove();
+        setTimeout(function () { URL.revokeObjectURL(url); }, 15000);
+        markBackup(); ui.msg = { t: 'ok', s: 'Backup downloaded: ' + name }; render();
+      } catch (e) {
+        ui.msg = { t: 'err', s: 'Couldn’t create the backup file on this device.' }; render();
+      }
+    }
+
+    if (file && navigator.canShare && navigator.canShare({ files: [file] }) && navigator.share) {
+      navigator.share({ files: [file], title: 'Weight Notes backup' }).then(function () {
+        markBackup(); ui.msg = { t: 'ok', s: 'Backup shared. Save it to Files or send it to yourself.' }; render();
+      }).catch(function (err) {
+        if (err && err.name === 'AbortError') return;
+        download();
+      });
+    } else {
+      download();
+    }
+  }
+
+  /* ---------- events ---------- */
+  document.addEventListener('input', function (e) { if (e.target.id === 'uWeight') updatePreview(); });
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Enter' && e.target.id === 'uWeight') {
+      var b = document.getElementById('uSave'); if (b && !b.disabled) b.click();
+    }
+  });
+
+  document.addEventListener('submit', function (e) {
+    if (e.target.id !== 'newForm') return;
+    e.preventDefault();
+    var name = document.getElementById('nName').value.trim();
+    var w = Math.round(parseFloat(document.getElementById('nWeight').value) * 100) / 100;
+    if (!name || !(w > 0) || w >= 10000) return;
+    S.exercises.push({ id: uid(), name: name, brand: document.getElementById('nBrand').value.trim(), entries: [{ d: iso(new Date()), w: w }] });
+    persist();
+    location.hash = '';
+    render();
+  });
+
+  document.addEventListener('change', function (e) {
+    if (e.target.id !== 'importFile') return;
+    var f = e.target.files && e.target.files[0];
+    if (!f) return;
+    var input = e.target;
+    if (f.size > 5 * 1024 * 1024) { input.value = ''; ui.msg = { t: 'err', s: 'That file is too large to be a backup.' }; render(); return; }
+    var rd = new FileReader();
+    rd.onload = function () {
+      var clean = null;
+      try { clean = sanitizeBackup(JSON.parse(rd.result)); } catch (err) { clean = null; }
+      if (clean) { ui.pending = clean; ui.msg = null; }
+      else { ui.pending = null; ui.msg = { t: 'err', s: 'That file isn’t a Weight Notes backup.' }; }
+      render();
+    };
+    rd.onerror = function () { ui.msg = { t: 'err', s: 'Couldn’t read that file.' }; render(); };
+    rd.readAsText(f);
+  });
+
+  document.addEventListener('click', function (e) {
+    var t = e.target.closest('[data-act]'); if (!t) return;
+    var act = t.getAttribute('data-act');
+
+    if (act === 'setup-unit') {
+      S.unit = t.getAttribute('data-u'); persist();
+      try { if (navigator.storage && navigator.storage.persist) navigator.storage.persist(); } catch (err) {}
+      render(); return;
+    }
+    if (act === 'hint-dismiss') { S.hintDismissed = true; persist(); render(); return; }
+
+    /* settings */
+    if (act === 'unit-pick') {
+      var u = t.getAttribute('data-u');
+      if (u === S.unit) { ui.unitPending = null; render(); return; }
+      if (!S.exercises.length) { S.unit = u; persist(); ui.unitPending = null; render(); return; }
+      ui.unitPending = u; render(); return;
+    }
+    if (act === 'unit-cancel') { ui.unitPending = null; render(); return; }
+    if (act === 'unit-keep') { S.unit = ui.unitPending; ui.unitPending = null; persist(); render(); return; }
+    if (act === 'unit-convert') {
+      var to = ui.unitPending, step = to === 'kg' ? 0.25 : 0.5, f = to === 'kg' ? 0.45359237 : 1 / 0.45359237;
+      S.exercises.forEach(function (ex) {
+        ex.entries.forEach(function (en) { en.w = Math.max(step, parseFloat((Math.round(en.w * f / step) * step).toFixed(2))); });
+      });
+      S.unit = to; ui.unitPending = null; persist(); render(); return;
+    }
+    if (act === 'export') { exportBackup(); return; }
+    if (act === 'import') { var fi = document.getElementById('importFile'); if (fi) fi.click(); return; }
+    if (act === 'import-no') { ui.pending = null; render(); return; }
+    if (act === 'import-yes') {
+      if (!ui.pending) return;
+      S.unit = ui.pending.unit; S.exercises = ui.pending.exercises;
+      var n = S.exercises.length; ui.pending = null; persist();
+      ui.msg = { t: 'ok', s: 'Imported ' + n + ' exercise' + (n === 1 ? '' : 's') + '.' }; render(); return;
+    }
+    if (act === 'wipe') { ui.confirmWipe = true; render(); return; }
+    if (act === 'wipe-no') { ui.confirmWipe = false; render(); return; }
+    if (act === 'wipe-yes') { S.exercises = []; persist(); ui.confirmWipe = false; ui.msg = { t: 'ok', s: 'All exercises deleted.' }; render(); return; }
+
+    /* exercise detail */
+    var c = current();
+    if (c.type !== 'detail') return;
+    var ex = c.ex;
+    if (act === 'edit') { ui.editing = true; ui.stack = []; render(); var i = document.getElementById('uWeight'); if (i) { i.focus(); i.select(); } }
+    else if (act === 'cancel-edit') { ui.editing = false; ui.stack = []; render(); }
+    else if (act === 'chip') {
+      var inp = document.getElementById('uWeight'); var base = parseFloat(inp.value);
+      if (!(base >= 0)) base = ex.entries[ex.entries.length - 1].w;
+      var next = parseFloat((base + parseFloat(t.getAttribute('data-v'))).toFixed(2));
+      if (!(next > 0)) return;
+      ui.stack.push(inp.value); inp.value = num(next); updatePreview();
+    }
+    else if (act === 'undo-chip') {
+      var inp2 = document.getElementById('uWeight');
+      if (ui.stack.length) { inp2.value = ui.stack.pop(); updatePreview(); }
+    }
+    else if (act === 'save-weight') {
+      var v = Math.round(parseFloat(document.getElementById('uWeight').value) * 100) / 100;
+      if (!(v > 0) || v >= 10000) return;
+      if (v === ex.entries[ex.entries.length - 1].w) return;
+      ex.entries.push({ d: iso(new Date()), w: v });
+      persist(); ui.editing = false; ui.stack = []; render();
+    }
+    else if (act === 'undo') { if (ex.entries.length > 1) { ex.entries.pop(); persist(); render(); } }
+    else if (act === 'delete') { ui.confirmDel = true; render(); }
+    else if (act === 'delete-no') { ui.confirmDel = false; render(); }
+    else if (act === 'delete-yes') {
+      S.exercises = S.exercises.filter(function (x) { return x.id !== ex.id; });
+      persist(); ui.confirmDel = false; location.hash = ''; render();
+    }
+  });
+
+  window.addEventListener('hashchange', function () { resetUi(); render(); window.scrollTo(0, 0); });
+
+  render();
+
+  if ('serviceWorker' in navigator && /^https?:$/.test(location.protocol)) {
+    window.addEventListener('load', function () {
+      navigator.serviceWorker.register('sw.js').catch(function () {});
+    });
+  }
+})();
+</script>
+</body>
+</html>
