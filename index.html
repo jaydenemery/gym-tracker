@@ -5,196 +5,248 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Weight Notes</title>
 <meta name="description" content="A bare-bones tracker for the weight you lift on each exercise and how it climbs over time.">
-<meta name="color-scheme" content="light dark">
-<meta name="theme-color" content="#eceeea" media="(prefers-color-scheme: light)">
-<meta name="theme-color" content="#111416" media="(prefers-color-scheme: dark)">
+<meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#0d0f10">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Weight Notes">
-<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" type="image/png" href="icons/icon-192.png">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 <style>
-/* Layout: one narrow column, phone-first. Home is a list of exercises, each row
-   showing current weight and progress; tapping a row opens its history. */
+/* Layout: dark rounded cards in two columns, grouped under muscle-group headings.
+   Each card shows the weight and a vertical freshness gauge. Detail screens stack panels. */
 :root {
-  --bg: #eceeea;
-  --surface: #ffffff;
-  --ink: #14181a;
-  --muted: #5b656a;
-  --line: #d6dbd7;
-  --accent: #cf2a22;
-  --on-accent: #ffffff;
-  --up: #1b7a44;
-  --down: #9a5a08;
-  --chip: #e4e8e4;
-  --stale1: #8a6700;
-  --stale2: #b04a0a;
-  --stale3: #c4271f;
-
-  --font-body: -apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui, 'Segoe UI', Roboto, sans-serif;
-  --font-num: 'Avenir Next Condensed', 'Barlow Condensed', 'Roboto Condensed', 'Arial Narrow', 'Helvetica Neue', sans-serif;
-  color-scheme: light dark;
+  --bg: #0d0f10;
+  --surface: #181b1e;
+  --surface2: #212528;
+  --line: rgba(255, 255, 255, .07);
+  --ink: #f3f5f4;
+  --muted: #9aa4a9;
+  --faint: #5f6a70;
+  --accent: #ff5d52;
+  --on-accent: #1a0f0e;
+  --up: #4fd18b;
+  --down: #e8a74b;
+  --s1: #e8c64a;
+  --s2: #f4903f;
+  --s3: #ff6b60;
+  --font: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'SF Pro Display', system-ui, 'Segoe UI', Roboto, sans-serif;
+  --ease: cubic-bezier(.2, .8, .2, 1);
+  color-scheme: dark;
 }
-@media (prefers-color-scheme: dark) {
-  :root {
-    --bg: #111416;
-    --surface: #1a1f22;
-    --ink: #eceeea;
-    --muted: #97a1a6;
-    --line: #2b3337;
-    --accent: #ff5d52;
-    --on-accent: #16191b;
-    --up: #5bd08a;
-    --down: #e8a74b;
-    --chip: #262d31;
-    --stale1: #e8c64a;
-    --stale2: #f4903f;
-    --stale3: #ff6b60;
-  }
-}
-
 * { box-sizing: border-box; }
 html { background: var(--bg); -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
 body {
   margin: 0;
   background: var(--bg);
   color: var(--ink);
-  font-family: var(--font-body);
+  font-family: var(--font);
   font-size: 16px;
-  line-height: 1.4;
+  line-height: 1.35;
+  -webkit-font-smoothing: antialiased;
   -webkit-tap-highlight-color: transparent;
   min-height: 100vh;
   min-height: 100dvh;
-  padding-top: max(20px, env(safe-area-inset-top, 0px));
-  padding-bottom: max(40px, calc(env(safe-area-inset-bottom, 0px) + 24px));
+  padding-top: calc(env(safe-area-inset-top, 0px) + 12px);
+  padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 32px);
   padding-left: max(16px, env(safe-area-inset-left, 0px));
   padding-right: max(16px, env(safe-area-inset-right, 0px));
 }
-.app { max-width: 480px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px; }
-button, input { font: inherit; color: inherit; touch-action: manipulation; }
+::selection { background: rgba(255, 255, 255, .22); }
+.app { max-width: 480px; margin: 0 auto; display: flex; flex-direction: column; gap: 22px; }
+button, input, textarea { font: inherit; color: inherit; touch-action: manipulation; }
 button { cursor: pointer; }
 a { color: inherit; text-decoration: none; }
-:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+:focus-visible { outline: 2px solid rgba(255, 255, 255, .6); outline-offset: 2px; }
+h1, h2, h3, p { margin: 0; }
 .vh { position: absolute; width: 1px; height: 1px; opacity: 0; overflow: hidden; pointer-events: none; }
 
-/* header */
-.top { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 44px; }
-.brand { font-family: var(--font-num); font-weight: 700; font-size: 22px; letter-spacing: .08em; text-transform: uppercase; }
-.back { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; font-weight: 500; color: var(--muted); }
-.pill { display: inline-flex; align-items: center; min-height: 36px; padding: 0 14px; background: var(--chip); border-radius: 8px; font-weight: 500; font-size: 15px; color: var(--ink); }
-.seg { display: inline-flex; background: var(--chip); border-radius: 8px; padding: 3px; }
-.seg button { border: 0; background: transparent; min-width: 44px; min-height: 34px; border-radius: 6px; font-family: var(--font-num); font-weight: 600; font-size: 16px; letter-spacing: .04em; color: var(--muted); }
-.seg button[aria-pressed="true"] { background: var(--surface); color: var(--ink); box-shadow: 0 1px 2px rgba(0,0,0,.12); }
-.seg.wide { display: flex; }
-.seg.wide button { flex: 1; min-height: 44px; font-size: 20px; }
-.page-title { margin: 0; font-size: 26px; line-height: 1.15; font-weight: 600; }
+/* top bar */
+.top { display: grid; grid-template-columns: 44px minmax(0, 1fr) 44px; align-items: center; gap: 8px; min-height: 44px; }
+.top .title { text-align: center; font-size: 17px; font-weight: 600; }
+.circle { width: 44px; height: 44px; border-radius: 50%; background: var(--surface); border: 1px solid var(--line); display: grid; place-items: center; color: var(--ink); padding: 0; }
+.circle svg { width: 20px; height: 20px; }
+.circle.blank { visibility: hidden; }
 
-/* home list */
-.list { display: flex; flex-direction: column; gap: 10px; margin: 0; padding: 0; list-style: none; }
-.row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 16px; align-items: center; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; }
-.row:active { background: var(--chip); }
-.row .name { font-weight: 600; font-size: 18px; overflow-wrap: anywhere; }
-.row .brand-line { color: var(--muted); font-size: 14px; overflow-wrap: anywhere; }
-.row .w { font-family: var(--font-num); font-weight: 700; font-size: 40px; line-height: 1; text-align: right; font-variant-numeric: tabular-nums; }
-.row .w small { font-size: 16px; font-weight: 500; color: var(--muted); margin-left: 3px; }
-.prog { font-family: var(--font-num); font-weight: 600; font-size: 18px; font-variant-numeric: tabular-nums; }
-.prog.up { color: var(--up); }
-.prog.down { color: var(--down); }
-.prog.flat { color: var(--muted); }
-.row .prog-wrap { grid-column: 1 / -1; display: flex; gap: 8px; align-items: baseline; justify-content: space-between; }
-.since { color: var(--muted); font-size: 13px; }
-.stale { display: inline-flex; align-items: center; gap: 6px; color: var(--muted); font-size: 13px; }
-.stale i { display: none; width: 8px; height: 8px; border-radius: 50%; background: currentColor; }
-.stale.s1 { color: var(--stale1); }
-.stale.s2 { color: var(--stale2); }
-.stale.s3 { color: var(--stale3); font-weight: 600; }
-.stale.s1 i, .stale.s2 i, .stale.s3 i { display: inline-block; }
+/* home */
+.grp { display: flex; flex-direction: column; gap: 10px; }
+.grp h2 { font-size: 18px; font-weight: 600; letter-spacing: -.01em; }
+.grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.card { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 10px; align-items: center; min-height: 132px; padding: 14px 12px 14px 16px; background: linear-gradient(180deg, #1c2023, var(--surface)); border: 1px solid var(--line); border-radius: 22px; }
+.cname { font-size: 15px; font-weight: 600; color: var(--muted); line-height: 1.2; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; overflow-wrap: anywhere; }
+.cbrand { font-size: 12px; color: var(--faint); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 2px; }
+.cval { font-size: clamp(28px, 9vw, 36px); font-weight: 700; letter-spacing: -.02em; line-height: 1.05; font-variant-numeric: tabular-nums; margin-top: 8px; white-space: nowrap; }
+.cval small { font-size: 14px; font-weight: 600; color: var(--muted); margin-left: 4px; letter-spacing: 0; }
+.cstat { display: flex; align-items: center; gap: 6px; margin-top: 6px; font-size: 15px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.cstat.up, .stat.up { color: var(--up); }
+.cstat.down, .stat.down { color: var(--down); }
+.cstat.flat, .stat.flat { color: var(--muted); }
+.sti { width: 16px; height: 16px; flex: none; }
+.addcard { display: flex; align-items: center; justify-content: center; min-height: 56px; border: 1.5px dashed rgba(255, 255, 255, .16); border-radius: 22px; color: var(--muted); font-weight: 600; }
 
-.btn { display: flex; align-items: center; justify-content: center; width: 100%; min-height: 52px; border-radius: 10px; border: 1px solid transparent; font-weight: 600; font-size: 17px; }
-.btn.primary { background: var(--accent); color: var(--on-accent); }
-.btn.primary:disabled { opacity: .4; cursor: default; }
-.btn.ghost { background: transparent; border-color: var(--line); color: var(--ink); }
-.btn.sm { min-height: 44px; font-size: 15px; }
-.btn.big { min-height: 68px; font-size: 22px; background: var(--surface); border-color: var(--line); color: var(--ink); }
-.btn.big:active { background: var(--chip); }
+/* freshness gauge */
+.gauge { --gc: var(--up); --p: .5; position: relative; width: 18px; height: 86px; border-radius: 9px; background: rgba(255, 255, 255, .07); flex: none; }
+.gauge.s1 { --gc: var(--s1); }
+.gauge.s2 { --gc: var(--s2); }
+.gauge.s3 { --gc: var(--s3); }
+.gfill { position: absolute; left: 3px; right: 3px; bottom: 3px; height: calc((100% - 6px) * var(--p)); border-radius: 6px; background: var(--gc); opacity: .85; animation: gh .8s var(--ease) backwards; }
+.gdot { position: absolute; left: 50%; width: 12px; height: 12px; margin-left: -6px; bottom: calc(3px + (100% - 6px) * var(--p) - 6px); border-radius: 50%; background: var(--bg); border: 2.5px solid var(--gc); box-shadow: 0 0 8px var(--gc); animation: gd .8s var(--ease) backwards; }
+@keyframes gh { from { height: 0; } }
+@keyframes gd { from { bottom: -6px; } }
+
+/* shared bits */
+.hint { color: var(--muted); font-size: 14px; }
+.hint.center { text-align: center; }
+.msg { font-size: 15px; font-weight: 500; }
+.msg.ok { color: var(--up); }
+.msg.err { color: var(--s3); }
+.empty { text-align: center; color: var(--muted); padding: 40px 8px 8px; }
+.note { display: flex; justify-content: space-between; align-items: center; gap: 12px; color: var(--muted); font-size: 14px; }
 .link { background: none; border: 0; color: var(--muted); min-height: 44px; padding: 0 4px; font-size: 15px; text-decoration: underline; text-underline-offset: 3px; }
 .link:disabled { opacity: .35; cursor: default; text-decoration: none; }
-.note { display: flex; justify-content: space-between; align-items: center; gap: 12px; color: var(--muted); font-size: 14px; }
-.empty { text-align: center; color: var(--muted); padding: 36px 8px; }
-.hint { margin: 0; color: var(--muted); font-size: 14px; }
-.hint.center { text-align: center; }
-.msg { margin: 0; font-size: 15px; font-weight: 500; }
-.msg.ok { color: var(--up); }
-.msg.err { color: var(--stale3); }
+.btn { display: flex; align-items: center; justify-content: center; width: 100%; min-height: 54px; border-radius: 16px; border: 1px solid transparent; font-weight: 600; font-size: 17px; }
+.btn.primary { background: var(--accent); color: var(--on-accent); }
+.btn.primary:disabled { opacity: .4; cursor: default; }
+.btn.ghost { background: var(--surface2); border-color: var(--line); color: var(--ink); }
+.btn.sm { min-height: 46px; font-size: 15px; }
+.btn.danger { background: var(--accent); color: var(--on-accent); }
+.btn.big { min-height: 68px; font-size: 22px; background: var(--surface); border-color: var(--line); color: var(--ink); }
+.stack { display: flex; flex-direction: column; gap: 10px; }
+.stack-lg { display: flex; flex-direction: column; gap: 14px; }
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: 22px; padding: 16px; display: flex; flex-direction: column; gap: 14px; }
+.lbl { font-size: 13px; color: var(--muted); font-weight: 600; letter-spacing: .04em; text-transform: uppercase; }
+.panel h2, .panel h3 { font-size: 13px; color: var(--muted); font-weight: 600; letter-spacing: .04em; text-transform: uppercase; }
+.field { display: flex; flex-direction: column; gap: 8px; }
+.field input, .field textarea { width: 100%; min-width: 0; min-height: 52px; padding: 0 14px; background: var(--surface2); border: 1px solid var(--line); border-radius: 14px; color: var(--ink); font-size: 17px; font-weight: 500; outline: none; -webkit-appearance: none; appearance: none; caret-color: var(--accent); }
+.field textarea { padding: 13px 14px; resize: none; line-height: 1.35; }
+.field input:focus, .field textarea:focus { border-color: rgba(255, 255, 255, .3); }
+.field input::placeholder, .field textarea::placeholder { color: var(--faint); }
+.field input[type="date"] { min-height: 52px; }
+.wrow { display: flex; align-items: center; gap: 10px; }
+.wrow .unit { font-size: 20px; font-weight: 600; color: var(--muted); min-width: 28px; }
+input.numin { font-size: 30px !important; font-weight: 600 !important; font-variant-numeric: tabular-nums; }
+.seg { display: flex; background: var(--surface2); border-radius: 14px; padding: 3px; gap: 3px; }
+.seg button { flex: 1; min-height: 42px; border: 0; border-radius: 11px; background: transparent; color: var(--muted); font-weight: 600; font-size: 16px; }
+.seg button[aria-pressed="true"] { background: var(--ink); color: var(--bg); }
+.gchips { display: flex; flex-wrap: wrap; gap: 8px; }
+.gchip { min-height: 40px; padding: 0 16px; border-radius: 20px; border: 1px solid var(--line); background: var(--surface2); color: var(--muted); font-weight: 600; font-size: 15px; }
+.gchip[aria-pressed="true"] { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+.confirm-block { display: flex; flex-direction: column; gap: 12px; padding-top: 12px; border-top: 1px solid var(--line); }
+.confirm-block p { font-size: 15px; }
 
-/* first-run setup */
-.setup { display: flex; flex-direction: column; gap: 14px; padding-top: 12vh; }
-.setup h1 { margin: 0; font-size: 28px; line-height: 1.15; font-weight: 600; }
+/* first run */
+.setup { display: flex; flex-direction: column; gap: 14px; padding-top: 10vh; }
+.setup h1 { font-size: 30px; line-height: 1.12; font-weight: 700; letter-spacing: -.02em; }
+.setup .brand { font-size: 15px; font-weight: 600; color: var(--muted); letter-spacing: .08em; text-transform: uppercase; }
 
 /* detail */
 .hero { display: flex; flex-direction: column; gap: 4px; }
-.hero h1 { margin: 0; font-size: 26px; line-height: 1.15; font-weight: 600; overflow-wrap: anywhere; }
+.eyebrow { font-size: 13px; color: var(--muted); text-transform: uppercase; letter-spacing: .08em; font-weight: 600; }
+.hero h1 { font-size: 28px; line-height: 1.12; font-weight: 700; letter-spacing: -.02em; overflow-wrap: anywhere; }
 .hero .brand-line { color: var(--muted); }
-.big { font-family: var(--font-num); font-weight: 700; font-size: 104px; line-height: .95; letter-spacing: -.01em; font-variant-numeric: tabular-nums; margin-top: 10px; }
-.big small { font-size: 28px; font-weight: 500; color: var(--muted); margin-left: 6px; letter-spacing: 0; }
-.change { display: flex; gap: 10px; align-items: baseline; flex-wrap: wrap; }
-.change .prog { font-size: 24px; }
-.spark { width: 100%; height: auto; display: block; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; }
+.bignum { font-size: 96px; font-weight: 700; line-height: .95; letter-spacing: -.04em; font-variant-numeric: tabular-nums; margin-top: 10px; white-space: nowrap; }
+.bignum small { font-size: 26px; font-weight: 600; color: var(--muted); margin-left: 6px; letter-spacing: 0; }
+.change { display: flex; flex-direction: column; gap: 6px; margin-top: 8px; }
+.stat { display: flex; align-items: center; gap: 8px; font-size: 20px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.stat .sti { width: 20px; height: 20px; }
+.stat .since { font-size: 14px; font-weight: 500; color: var(--muted); }
+.fresh { --gc: var(--up); display: flex; align-items: center; gap: 8px; font-size: 14px; color: var(--gc); font-weight: 500; }
+.fresh.s1 { --gc: var(--s1); }
+.fresh.s2 { --gc: var(--s2); }
+.fresh.s3 { --gc: var(--s3); }
+.fresh i { width: 8px; height: 8px; border-radius: 50%; background: var(--gc); }
+.spark { width: 100%; height: auto; display: block; background: var(--surface); border: 1px solid var(--line); border-radius: 22px; }
 .spark .line { fill: none; stroke: var(--ink); stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
 .spark .base { stroke: var(--line); stroke-width: 1; stroke-dasharray: 3 4; }
 .spark .dot { fill: var(--accent); }
-.panel { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 16px; display: flex; flex-direction: column; gap: 14px; }
-.panel label, .panel h2 { margin: 0; font-size: 13px; color: var(--muted); text-transform: uppercase; letter-spacing: .08em; font-weight: 500; }
-.field { display: flex; align-items: center; gap: 10px; }
-.field input { flex: 1; min-width: 0; background: var(--bg); border: 1px solid var(--line); border-radius: 8px; min-height: 52px; padding: 0 14px; font-family: var(--font-num); font-weight: 600; font-size: 30px; font-variant-numeric: tabular-nums; }
-.field .unit { font-family: var(--font-num); font-weight: 500; font-size: 20px; color: var(--muted); }
-.field input.text { font-family: var(--font-body); font-weight: 500; font-size: 17px; }
 .chips { display: flex; flex-direction: column; gap: 8px; }
 .chip-row { display: flex; gap: 8px; }
-.chip { min-width: 64px; min-height: 44px; padding: 0 14px; background: var(--chip); border: 1px solid var(--line); border-radius: 8px; font-family: var(--font-num); font-weight: 600; font-size: 20px; font-variant-numeric: tabular-nums; }
-.chip:active { background: var(--line); }
-.chip-row .chip { flex: 1 1 0; min-width: 0; padding: 0 6px; }
+.chip { flex: 1 1 0; min-width: 0; min-height: 46px; padding: 0 6px; background: var(--surface2); border: 1px solid var(--line); border-radius: 14px; font-size: 19px; font-weight: 600; font-variant-numeric: tabular-nums; }
 .pvrow { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
-.preview { font-family: var(--font-num); font-size: 20px; font-weight: 500; color: var(--muted); font-variant-numeric: tabular-nums; min-height: 26px; }
+.preview { font-size: 19px; font-weight: 500; color: var(--muted); font-variant-numeric: tabular-nums; min-height: 26px; }
 .preview b { color: var(--ink); font-weight: 700; }
-.stack { display: flex; flex-direction: column; gap: 10px; }
-.history h2 { margin: 0 0 6px; font-size: 13px; font-weight: 500; color: var(--muted); text-transform: uppercase; letter-spacing: .08em; }
-.history ul { list-style: none; margin: 0; padding: 0; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; }
-.history li { display: grid; grid-template-columns: 1fr auto auto; gap: 14px; align-items: baseline; padding: 12px 16px; border-top: 1px solid var(--line); }
-.history li:first-child { border-top: 0; }
-.history .d { color: var(--muted); }
-.history .hw { font-family: var(--font-num); font-weight: 700; font-size: 24px; font-variant-numeric: tabular-nums; }
-.history .hd { font-family: var(--font-num); font-weight: 600; font-size: 18px; min-width: 52px; text-align: right; font-variant-numeric: tabular-nums; }
-.foot { display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; }
-.confirm { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; color: var(--muted); font-size: 15px; }
-.confirm .btn { width: auto; padding: 0 16px; }
-.confirm-block { display: flex; flex-direction: column; gap: 12px; padding-top: 4px; border-top: 1px solid var(--line); }
-.confirm-block p { margin: 12px 0 0; font-size: 15px; }
-.danger { background: var(--accent); color: var(--on-accent); }
+.cardhead { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: -8px 0 -6px; }
+.kv { display: flex; justify-content: space-between; gap: 12px; align-items: baseline; }
+.kv span { color: var(--muted); }
+.kv b { font-weight: 600; text-align: right; overflow-wrap: anywhere; }
+.notes { white-space: pre-wrap; overflow-wrap: anywhere; color: var(--ink); }
+.dim { color: var(--faint); }
+.history h2 { margin: 0 0 8px; font-size: 13px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
+.hlist { list-style: none; margin: 0; padding: 0; background: var(--surface); border: 1px solid var(--line); border-radius: 22px; overflow: hidden; }
+.hlist li { border-top: 1px solid var(--line); }
+.hlist li:first-child { border-top: 0; }
+.hrow { display: grid; grid-template-columns: 1fr auto auto; gap: 14px; align-items: baseline; width: 100%; padding: 13px 16px; background: transparent; border: 0; text-align: left; }
+.hrow .d { color: var(--muted); }
+.hrow .hw { font-size: 22px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.hrow .hd { font-size: 17px; font-weight: 600; min-width: 52px; text-align: right; font-variant-numeric: tabular-nums; }
+.hd.up { color: var(--up); } .hd.down { color: var(--down); } .hd.flat { color: var(--muted); }
+.hedit { padding: 14px 16px; display: flex; flex-direction: column; gap: 12px; }
+.foot { display: flex; justify-content: center; }
 
-@media (prefers-reduced-motion: no-preference) {
-  .row, .btn, .chip { transition: background-color .12s ease; }
+/* motion */
+.card, .btn, .chip, .gchip, .circle, .seg button, .hrow, .addcard { transition: transform .16s var(--ease), background-color .16s ease, opacity .16s ease; }
+.card:active, .btn:active, .chip:active, .gchip:active, .circle:active, .addcard:active { transform: scale(.97); }
+.seg button:active, .hrow:active { background: rgba(255, 255, 255, .06); }
+@keyframes enter { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+@keyframes pop { from { opacity: 0; transform: translateY(8px) scale(.985); } to { opacity: 1; transform: none; } }
+.app.enter > * { animation: enter .34s var(--ease) backwards; }
+.app.enter > *:nth-child(2) { animation-delay: .04s; }
+.app.enter > *:nth-child(3) { animation-delay: .08s; }
+.app.enter > *:nth-child(4) { animation-delay: .12s; }
+.app.enter > *:nth-child(5) { animation-delay: .16s; }
+.app.enter > *:nth-child(n+6) { animation-delay: .2s; }
+.pop { animation: pop .3s var(--ease) backwards; }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
 }
-@media (max-width: 380px) { .big { font-size: 88px; } .row .w { font-size: 34px; } }
+@media (max-width: 380px) { .bignum { font-size: 84px; } .gauge { width: 16px; } }
 </style>
 </head>
 <body>
 <div class="app" id="app"></div>
-<noscript><p style="padding:24px;font-family:sans-serif">Weight Notes needs JavaScript turned on.</p></noscript>
+<noscript><p style="padding:24px">Weight Notes needs JavaScript turned on.</p></noscript>
 
 <script>
 (function () {
   'use strict';
 
-  var KEY = 'weight-notes-v1';
+  var KEY = 'weight-notes-v1'; // same key as version 1 so existing data carries over
   var storageOK = true;
+
+  var GROUPS = [['chest', 'Chest'], ['back', 'Back'], ['shoulders', 'Shoulders'], ['arms', 'Arms'], ['legs', 'Legs'], ['core', 'Core'], ['other', 'Other']];
+  var GNAME = {}; GROUPS.forEach(function (g) { GNAME[g[0]] = g[1]; });
+
+  /* Keyword rules, checked in order. They look at the exercise name only. */
+  var RULES = [
+    ['chest', /chest dip/],
+    ['core', /\b(crunch(es)?|abs?|abdominals?|plank|obliques?|sit.?ups?|leg raises?|knee raises?|woodchop(per)?s?|torso rotation|core)\b/],
+    ['legs', /(\bleg\b|\blegs\b|squat|lunge|calf|calves|hamstring|quad|glute|hip thrust|hip abduct|hip adduct|adductor|abductor|\bhack\b|thigh|romanian|\brdl\b|step.?up)/],
+    ['arms', /(curl|bicep|tricep|pushdown|push down|skull|preacher|forearm|wrist|kickback|\bdips?\b)/],
+    ['shoulders', /(shoulder|overhead|\bohp\b|military|lateral raise|side raise|front raise|rear delt|reverse fly|reverse pec|arnold|upright row|face pull|shrug|\bdelts?\b)/],
+    ['back', /(\brows?\b|rowing|\blats?\b|pulldown|pull down|pull.?ups?|chin.?ups?|deadlift|\bback\b|rack pull|pullover|t-bar|good morning)/],
+    ['chest', /(chest|bench|\bpecs?\b|pec deck|\bfl(y|ye|yes|ies)\b|push.?ups?|incline|decline|cable cross|crossover)/]
+  ];
+  function classify(name) {
+    var n = String(name || '').toLowerCase();
+    if (!n.trim()) return null;
+    for (var i = 0; i < RULES.length; i++) if (RULES[i][1].test(n)) return RULES[i][0];
+    return null;
+  }
 
   /* ---------- helpers ---------- */
   function iso(d) { return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
   function uid() { return 'x' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6); }
-  function num(v) { return String(parseFloat(Number(v).toFixed(2))); }
+  function round2(v) { return Math.round(v * 100) / 100; }
+  var SEP = (1.5).toLocaleString().indexOf(',') > -1 ? ',' : '.';
+  function fmt(v) { return String(round2(v)).replace('.', SEP); }
+  function parseNum(s) {
+    s = String(s == null ? '' : s).trim().replace(/\s+/g, '').replace(/,/g, '.');
+    if (!/^(\d+\.?\d*|\.\d+)$/.test(s)) return NaN;
+    return parseFloat(s);
+  }
+  function validW(w) { return isFinite(w) && w > 0 && w < 10000; }
   function sign(v) { return v > 0 ? '+' : v < 0 ? '−' : ''; }
   function esc(s) { return String(s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
   function dateLabel(s) {
@@ -203,9 +255,27 @@ a { color: inherit; text-decoration: none; }
     if (d.getFullYear() !== new Date().getFullYear()) o.year = 'numeric';
     return d.toLocaleDateString(undefined, o);
   }
+  function reduced() { return window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches; }
+
+  /* ---------- haptics ---------- */
+  function isIOS() { return /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1); }
+  function haptic() {
+    if (S && S.haptics === false) return;
+    try {
+      if (isIOS()) {
+        /* Unofficial iOS trick: toggling a hidden switch checkbox from a tap gives a light tick. */
+        var l = document.createElement('label');
+        l.setAttribute('aria-hidden', 'true'); l.style.display = 'none';
+        var i = document.createElement('input'); i.type = 'checkbox'; i.setAttribute('switch', '');
+        l.appendChild(i); document.head.appendChild(l); l.click(); document.head.removeChild(l);
+      } else if (navigator.vibrate) {
+        navigator.vibrate(8);
+      }
+    } catch (e) {}
+  }
 
   /* ---------- data ---------- */
-  function sanitizeExercises(list) {
+  function sanitizeExercises(list, defUnit) {
     var out = [], seen = {};
     if (!Array.isArray(list)) return out;
     list.slice(0, 500).forEach(function (e) {
@@ -216,23 +286,32 @@ a { color: inherit; text-decoration: none; }
       e.entries.slice(0, 5000).forEach(function (x) {
         if (!x || typeof x !== 'object') return;
         var w = Number(x.w), d = String(x.d || '');
-        if (/^\d{4}-\d{2}-\d{2}$/.test(d) && isFinite(w) && w > 0 && w < 10000) entries.push({ d: d, w: Math.round(w * 100) / 100 });
+        if (/^\d{4}-\d{2}-\d{2}$/.test(d) && validW(w)) entries.push({ d: d, w: round2(w) });
       });
       if (!entries.length) return;
       var id = String(e.id || '');
       if (!/^x[a-z0-9]{2,31}$/i.test(id) || seen[id]) id = uid();
       seen[id] = 1;
-      out.push({ id: id, name: name, brand: String(e.brand == null ? '' : e.brand).trim().slice(0, 60), entries: entries });
+      out.push({
+        id: id, name: name,
+        brand: String(e.brand == null ? '' : e.brand).trim().slice(0, 60),
+        group: GNAME[e.group] ? e.group : (classify(name) || 'other'),
+        unit: e.unit === 'kg' || e.unit === 'lb' ? e.unit : defUnit,
+        seat: String(e.seat == null ? '' : e.seat).trim().slice(0, 40),
+        notes: String(e.notes == null ? '' : e.notes).trim().slice(0, 300),
+        entries: entries
+      });
     });
     return out;
   }
 
   function sanitizeBackup(o) {
     if (!o || o.app !== 'weight-notes' || !Array.isArray(o.exercises)) return null;
-    if (o.unit !== 'lb' && o.unit !== 'kg') return null;
-    var ex = sanitizeExercises(o.exercises);
+    var u = o.defaultUnit || o.unit;
+    if (u !== 'lb' && u !== 'kg') return null;
+    var ex = sanitizeExercises(o.exercises, u);
     if (o.exercises.length > 0 && ex.length === 0) return null;
-    return { unit: o.unit, exercises: ex };
+    return { defaultUnit: u, exercises: ex };
   }
 
   function load() {
@@ -240,23 +319,29 @@ a { color: inherit; text-decoration: none; }
     try { localStorage.setItem('__wn', '1'); localStorage.removeItem('__wn'); } catch (e) { storageOK = false; }
     try { var r = localStorage.getItem(KEY); if (r) s = JSON.parse(r); } catch (e) { s = null; }
     if (!s || typeof s !== 'object') s = {};
+    var du = s.defaultUnit === 'kg' || s.defaultUnit === 'lb' ? s.defaultUnit : (s.unit === 'kg' || s.unit === 'lb' ? s.unit : null);
     return {
-      unit: s.unit === 'kg' || s.unit === 'lb' ? s.unit : null,
-      exercises: sanitizeExercises(s.exercises),
+      defaultUnit: du,
+      exercises: sanitizeExercises(s.exercises, du || 'lb'),
       lastBackup: +s.lastBackup || 0,
-      hintDismissed: !!s.hintDismissed
+      hintDismissed: !!s.hintDismissed,
+      haptics: s.haptics !== false
     };
   }
 
   var S = load();
   function persist() {
-    try { localStorage.setItem(KEY, JSON.stringify(S)); storageOK = true; } catch (e) { storageOK = false; }
+    try {
+      localStorage.setItem(KEY, JSON.stringify({ v: 2, defaultUnit: S.defaultUnit, exercises: S.exercises, lastBackup: S.lastBackup, hintDismissed: S.hintDismissed, haptics: S.haptics }));
+      storageOK = true;
+    } catch (e) { storageOK = false; }
   }
 
-  var ui = { editing: false, confirmDel: false, stack: [], unitPending: null, pending: null, confirmWipe: false, msg: null };
-  function resetUi() { ui.editing = false; ui.confirmDel = false; ui.stack = []; ui.unitPending = null; ui.pending = null; ui.confirmWipe = false; ui.msg = null; }
+  var ui = {};
+  function resetUi() { ui = { editing: false, stack: [], pending: null, confirmWipe: false, msg: null, setupEdit: false, hist: -1, form: null, roll: null }; }
+  resetUi();
 
-  /* Days without a weight change before a row starts to warn: yellow, orange, red. */
+  /* Days without a weight change before the gauge changes color: yellow, orange, red. */
   var STALE_DAYS = [28, 56, 84];
   function daysSince(s) {
     var p = s.split('-'); var d = new Date(+p[0], +p[1] - 1, +p[2]);
@@ -265,6 +350,7 @@ a { color: inherit; text-decoration: none; }
   }
   function age(ex) { return daysSince(ex.entries[ex.entries.length - 1].d); }
   function staleLevel(n) { return n >= STALE_DAYS[2] ? 3 : n >= STALE_DAYS[1] ? 2 : n >= STALE_DAYS[0] ? 1 : 0; }
+  function freshness(n) { return Math.max(.1, Math.min(1, 1 - n / STALE_DAYS[2])); }
   function ago(n) {
     if (n <= 0) return 'today';
     if (n === 1) return 'yesterday';
@@ -275,22 +361,36 @@ a { color: inherit; text-decoration: none; }
 
   function stats(ex) {
     var first = ex.entries[0].w, cur = ex.entries[ex.entries.length - 1].w;
-    var delta = parseFloat((cur - first).toFixed(2));
-    var pct = first ? Math.round((cur - first) / first * 100) : 0;
-    return { first: first, cur: cur, delta: delta, pct: pct, cls: delta > 0 ? 'up' : delta < 0 ? 'down' : 'flat', since: ex.entries[0].d };
+    var delta = round2(cur - first);
+    return { first: first, cur: cur, delta: delta, cls: delta > 0 ? 'up' : delta < 0 ? 'down' : 'flat', since: ex.entries[0].d };
   }
-  function progText(st) {
-    if (st.delta === 0) return 'No change yet';
-    return sign(st.delta) + num(Math.abs(st.delta)) + ' ' + S.unit + ' · ' + sign(st.pct || st.delta) + Math.abs(st.pct) + '%';
-  }
-  function progShort(st) {
+  function deltaText(st, unit) {
     if (st.delta === 0) return 'Starting weight';
-    return sign(st.delta) + num(Math.abs(st.delta)) + ' ' + S.unit;
+    return sign(st.delta) + fmt(Math.abs(st.delta)) + ' ' + unit;
+  }
+  function sortEntries(ex) {
+    ex.entries = ex.entries.map(function (e, i) { return { e: e, i: i }; }).sort(function (a, b) {
+      return a.e.d < b.e.d ? -1 : a.e.d > b.e.d ? 1 : a.i - b.i;
+    }).map(function (x) { return x.e; });
+  }
+  function findEx(id) { return S.exercises.filter(function (e) { return e.id === id; })[0]; }
+
+  /* ---------- icons ---------- */
+  var SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">';
+  var ICONS = {
+    sliders: SVG + '<path d="M4 7h10M18 7h2M4 17h2M10 17h10"/><circle cx="16" cy="7" r="2"/><circle cx="8" cy="17" r="2"/></svg>',
+    plus: SVG + '<path d="M12 5v14M5 12h14"/></svg>',
+    back: SVG + '<path d="M15 5l-7 7 7 7"/></svg>',
+    edit: SVG + '<path d="M12 20h8"/><path d="M16.5 3.5l4 4L8 20l-5 1 1-5z"/></svg>'
+  };
+  function circle(href, icon, label) { return '<a class="circle" href="' + href + '" aria-label="' + label + '">' + ICONS[icon] + '</a>'; }
+  function blank() { return '<span class="circle blank" aria-hidden="true"></span>'; }
+  function statIcon(cls) {
+    var g = cls === 'up' ? '<path d="M8 11.5V5M5.2 7.6L8 4.8l2.8 2.8"/>' : cls === 'down' ? '<path d="M8 4.5v6.5M5.2 8.4L8 11.2l2.8-2.8"/>' : '<path d="M4.8 8h6.4"/>';
+    return '<svg class="sti" viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="8" fill="currentColor"/><g fill="none" stroke="#0d0f10" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">' + g + '</g></svg>';
   }
 
   /* ---------- views ---------- */
-  function header(left, right) { return '<div class="top">' + left + (right || '') + '</div>'; }
-
   function showInstallHint() {
     if (S.hintDismissed) return false;
     var ios = /iphone|ipad|ipod/i.test(navigator.userAgent);
@@ -298,42 +398,83 @@ a { color: inherit; text-decoration: none; }
     return ios && !standalone;
   }
 
+  function unitSeg(id, cur, act) {
+    return '<div class="seg" id="' + id + '" role="group" aria-label="Unit">' + ['lb', 'kg'].map(function (u) {
+      return '<button type="button" data-act="' + act + '" data-u="' + u + '" aria-pressed="' + (cur === u) + '">' + u + '</button>';
+    }).join('') + '</div>';
+  }
+
   function viewSetup() {
     return '<div class="setup"><div class="brand">Weight Notes</div>' +
-      '<h1>Which unit do you lift in?</h1>' +
-      '<p class="hint">Pick one. Every weight is saved and shown in it, with no conversions. You can change it later in Settings.</p>' +
-      '<div class="stack">' +
-      '<button type="button" class="btn big" data-act="setup-unit" data-u="lb">Pounds (lb)</button>' +
+      '<h1>Which unit do you usually lift in?</h1>' +
+      '<p class="hint">New exercises start with this unit. Each exercise keeps its own unit, so you can mix kg and lb machines.</p>' +
+      '<div class="stack"><button type="button" class="btn big" data-act="setup-unit" data-u="lb">Pounds (lb)</button>' +
       '<button type="button" class="btn big" data-act="setup-unit" data-u="kg">Kilograms (kg)</button></div></div>';
   }
 
+  function cardHtml(ex) {
+    var st = stats(ex), n = age(ex), lvl = staleLevel(n), p = freshness(n).toFixed(3);
+    return '<a class="card" href="#' + ex.id + '"><div><div class="cname">' + esc(ex.name) + '</div>' +
+      (ex.brand ? '<div class="cbrand">' + esc(ex.brand) + '</div>' : '') +
+      '<div class="cval">' + fmt(st.cur) + '<small>' + ex.unit + '</small></div>' +
+      '<div class="cstat ' + st.cls + '">' + statIcon(st.cls) + '<span>' + deltaText(st, ex.unit) + '</span></div></div>' +
+      '<div class="gauge s' + lvl + '" style="--p:' + p + '" role="img" aria-label="Updated ' + ago(n) + '"><span class="gfill"></span><span class="gdot"></span></div></a>';
+  }
+
   function viewHome() {
-    var h = header('<span class="brand">Weight Notes</span>', '<a class="pill" href="#settings">Settings</a>');
+    var h = '<div class="top">' + circle('#settings', 'sliders', 'Settings') + '<span class="title">Weight Notes</span>' + circle('#new', 'plus', 'Add exercise') + '</div>';
     if (!S.exercises.length) {
-      h += '<div class="empty">Nothing here yet.<br>Add the first exercise you train.</div>';
+      h += '<div class="empty">Nothing here yet.<br>Add the first exercise you train.</div><a class="btn primary" href="#new">Add exercise</a>';
     } else {
-      h += '<ul class="list">' + S.exercises.map(function (ex) {
-        var st = stats(ex);
-        return '<li><a class="row" href="#' + ex.id + '">' +
-          '<div><div class="name">' + esc(ex.name) + '</div>' + (ex.brand ? '<div class="brand-line">' + esc(ex.brand) + '</div>' : '') + '</div>' +
-          '<div class="w">' + num(st.cur) + '<small>' + S.unit + '</small></div>' +
-          '<div class="prog-wrap"><span class="prog ' + st.cls + '">' + progShort(st) + '</span><span class="stale s' + staleLevel(age(ex)) + '"><i></i>Updated ' + ago(age(ex)) + '</span></div>' +
-          '</a></li>';
-      }).join('') + '</ul>';
+      GROUPS.forEach(function (g) {
+        var list = S.exercises.filter(function (e) { return e.group === g[0]; });
+        if (!list.length) return;
+        h += '<section class="grp"><h2>' + g[1] + '</h2><div class="grid">' + list.map(cardHtml).join('') + '</div></section>';
+      });
+      h += '<a class="addcard" href="#new">Add exercise</a>';
+      h += '<p class="hint center">The bar on each card shows how recently you updated that weight. It drains over 12 weeks.</p>';
     }
-    h += '<a class="btn primary" href="#new">Add exercise</a>';
     if (!storageOK) h += '<p class="msg err">This browser can’t save data (private browsing?). Export a backup in Settings before you close the app.</p>';
     if (showInstallHint()) h += '<div class="note"><span>Install it first: Share, then Add to Home Screen. The installed app keeps its own data, separate from Safari.</span><button type="button" class="link" data-act="hint-dismiss">Got it</button></div>';
     return h;
   }
 
-  function viewNew() {
-    return header('<a class="back" href="#">← Back</a>') +
-      '<form class="panel" id="newForm" autocomplete="off">' +
-      '<div class="stack"><label for="nName">Exercise</label><div class="field"><input class="text" id="nName" type="text" placeholder="Chest press" maxlength="60" required></div></div>' +
-      '<div class="stack"><label for="nBrand">Brand or note (optional)</label><div class="field"><input class="text" id="nBrand" type="text" placeholder="Hammer Strength" maxlength="60"></div></div>' +
-      '<div class="stack"><label for="nWeight">Current weight</label><div class="field"><input id="nWeight" type="number" inputmode="decimal" step="any" min="0" placeholder="0" required><span class="unit">' + S.unit + '</span></div></div>' +
-      '<button class="btn primary" type="submit">Save exercise</button></form>';
+  function numField(id, value, label, unit, unitId) {
+    return '<div class="field"><label class="lbl" for="' + id + '">' + label + '</label><div class="wrow">' +
+      '<input id="' + id + '" class="numin" type="text" inputmode="decimal" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" enterkeyhint="done" placeholder="0" value="' + esc(value) + '">' +
+      '<span class="unit" id="' + (unitId || '') + '">' + unit + '</span></div></div>';
+  }
+
+  function viewForm(ex) {
+    var isNew = !ex;
+    var unit = ex ? ex.unit : S.defaultUnit;
+    var group = ex ? ex.group : '';
+    ui.form = { touched: !isNew };
+    var h = '<div class="top"><a class="circle" href="' + (isNew ? '#' : '#' + ex.id) + '" aria-label="Back">' + ICONS.back + '</a><span class="title">' + (isNew ? 'New exercise' : 'Edit exercise') + '</span>' + blank() + '</div>';
+    h += '<form class="stack-lg" id="exForm" autocomplete="off" novalidate data-id="' + (ex ? ex.id : '') + '">' +
+      '<section class="panel"><div class="field"><label class="lbl" for="fName">Exercise</label><input id="fName" type="text" maxlength="60" placeholder="Chest press" autocapitalize="words" value="' + esc(ex ? ex.name : '') + '"></div>' +
+      '<div class="field"><label class="lbl" for="fBrand">Brand (optional)</label><input id="fBrand" type="text" maxlength="60" placeholder="Hammer Strength" autocapitalize="words" value="' + esc(ex ? ex.brand : '') + '"></div></section>' +
+      '<section class="panel"><span class="lbl" id="gLbl">Muscle group</span><div class="gchips" id="gChips" role="group" aria-labelledby="gLbl">' +
+      GROUPS.map(function (g) { return '<button type="button" class="gchip" data-act="form-group" data-g="' + g[0] + '" aria-pressed="' + (group === g[0]) + '">' + g[1] + '</button>'; }).join('') +
+      '</div><p class="hint" id="gHint"></p></section>' +
+      '<section class="panel"><span class="lbl">Unit for this exercise</span>' + unitSeg('fUnit', unit, 'form-unit') +
+      (isNew ? numField('fWeight', '', 'Starting weight', unit, 'fUnitLbl') : '') + '</section>';
+    if (isNew) {
+      h += '<section class="panel"><span class="lbl">Setup (optional)</span>' +
+        '<div class="field"><label class="lbl" for="fSeat">Seat height</label><input id="fSeat" type="text" maxlength="40" placeholder="5 notch, 3 stack, 12 cm" autocapitalize="off" autocorrect="off"></div>' +
+        '<div class="field"><label class="lbl" for="fNotes">Notes</label><textarea id="fNotes" rows="3" maxlength="300" placeholder="Back pad 2, handles wide"></textarea></div></section>';
+    }
+    h += '<p class="msg err" id="fErr" role="alert" hidden></p>';
+    h += '<button class="btn primary" type="submit" id="fSave">' + (isNew ? 'Save exercise' : 'Save changes') + '</button>';
+    if (!isNew) {
+      h += '<section class="panel pop" id="unitAsk" hidden><p>Unit changed to <b id="unitAskTo"></b>. Convert your saved weights (rounded to the nearest <span id="unitAskStep"></span>), or keep the numbers and only change the label?</p>' +
+        '<div class="stack"><button type="button" class="btn primary sm" data-act="edit-convert">Convert weights</button>' +
+        '<button type="button" class="btn ghost sm" data-act="edit-keep">Keep numbers</button>' +
+        '<button type="button" class="btn ghost sm" data-act="edit-unit-cancel">Cancel</button></div></section>';
+      h += '<div id="delBox"><button type="button" class="btn ghost sm" data-act="del-ask">Delete exercise</button></div>' +
+        '<section class="panel pop" id="delAsk" hidden><p>Delete ' + esc(ex.name) + ' and its history?</p><div class="stack"><button type="button" class="btn danger sm" data-act="del-yes">Delete</button><button type="button" class="btn ghost sm" data-act="del-no">Keep</button></div></section>';
+    }
+    return h + '</form>';
   }
 
   function spark(entries) {
@@ -352,22 +493,23 @@ a { color: inherit; text-decoration: none; }
       '<circle class="dot" cx="' + x(last).toFixed(1) + '" cy="' + y(vals[last]).toFixed(1) + '" r="5"/></svg>';
   }
 
-  function chipsFor() { return S.unit === 'lb' ? [2.5, 5, 10, 20] : [1.25, 2.5, 5, 10]; }
+  function chipsFor(u) { return u === 'lb' ? [2.5, 5, 10, 20] : [1.25, 2.5, 5, 10]; }
 
   function viewDetail(ex) {
-    var st = stats(ex);
-    var h = header('<a class="back" href="#">← All exercises</a>');
-    h += '<div class="hero"><h1>' + esc(ex.name) + '</h1>' + (ex.brand ? '<div class="brand-line">' + esc(ex.brand) + '</div>' : '') +
-      '<div class="big">' + num(st.cur) + '<small>' + S.unit + '</small></div>' +
-      '<div class="change"><span class="prog ' + st.cls + '">' + progText(st) + '</span><span class="since">since ' + dateLabel(st.since) + ' (' + num(st.first) + ' ' + S.unit + ')</span></div></div>';
+    var st = stats(ex), n = age(ex), lvl = staleLevel(n);
+    var h = '<div class="top"><a class="circle" href="#" aria-label="All exercises">' + ICONS.back + '</a><span class="title"></span><a class="circle" href="#e-' + ex.id + '" aria-label="Edit exercise">' + ICONS.edit + '</a></div>';
+    h += '<div class="hero"><div class="eyebrow">' + GNAME[ex.group] + '</div><h1>' + esc(ex.name) + '</h1>' + (ex.brand ? '<div class="brand-line">' + esc(ex.brand) + '</div>' : '') +
+      '<div class="bignum"><span id="bigNum">' + fmt(st.cur) + '</span><small>' + ex.unit + '</small></div>' +
+      '<div class="change"><div class="stat ' + st.cls + '">' + statIcon(st.cls) + '<span>' + deltaText(st, ex.unit) + '</span>' +
+      (st.delta !== 0 ? '<span class="since">since ' + dateLabel(st.since) + ' (' + fmt(st.first) + ')</span>' : '') + '</div>' +
+      '<div class="fresh s' + lvl + '"><i></i>Updated ' + ago(n) + '</div></div></div>';
     h += spark(ex.entries);
 
     if (ui.editing) {
-      h += '<div class="panel"><div class="stack"><label for="uWeight">New weight</label>' +
-        '<div class="field"><input id="uWeight" type="number" inputmode="decimal" step="any" min="0" value="' + num(st.cur) + '"><span class="unit">' + S.unit + '</span></div></div>' +
+      h += '<div class="panel pop">' + numField('uWeight', fmt(st.cur), 'New weight', ex.unit, '') +
         '<div class="chips">' + ['', '-'].map(function (sg) {
-          return '<div class="chip-row">' + chipsFor().map(function (c) {
-            return '<button type="button" class="chip" data-act="chip" data-v="' + sg + c + '" aria-label="' + (sg ? 'Subtract ' : 'Add ') + c + '">' + (sg ? '−' : '+') + c + '</button>';
+          return '<div class="chip-row">' + chipsFor(ex.unit).map(function (c) {
+            return '<button type="button" class="chip" data-act="chip" data-v="' + sg + c + '" aria-label="' + (sg ? 'Subtract ' : 'Add ') + fmt(c) + '">' + (sg ? '−' : '+') + fmt(c) + '</button>';
           }).join('') + '</div>';
         }).join('') + '</div>' +
         '<div class="pvrow"><div class="preview" id="uPreview" aria-live="polite"></div><button type="button" class="link" id="uUndo" data-act="undo-chip" disabled>Undo</button></div>' +
@@ -377,40 +519,48 @@ a { color: inherit; text-decoration: none; }
       h += '<button type="button" class="btn primary" data-act="edit">Update weight</button>';
     }
 
-    h += '<div class="history"><h2>History</h2><ul>' + ex.entries.slice().reverse().map(function (e, i) {
+    /* setup: seat height + notes */
+    h += '<section class="panel"><div class="cardhead"><h3>Setup</h3>' + (ui.setupEdit ? '' : '<button type="button" class="link" data-act="setup-edit">Edit</button>') + '</div>';
+    if (ui.setupEdit) {
+      h += '<div class="field"><label class="lbl" for="sSeat">Seat height</label><input id="sSeat" type="text" maxlength="40" placeholder="5 notch, 3 stack, 12 cm" autocapitalize="off" autocorrect="off" value="' + esc(ex.seat) + '"></div>' +
+        '<div class="field"><label class="lbl" for="sNotes">Notes</label><textarea id="sNotes" rows="3" maxlength="300" placeholder="Back pad 2, handles wide">' + esc(ex.notes) + '</textarea></div>' +
+        '<div class="stack"><button type="button" class="btn primary sm" data-act="setup-save">Save</button><button type="button" class="btn ghost sm" data-act="setup-cancel">Cancel</button></div>';
+    } else {
+      h += '<div class="kv"><span>Seat height</span><b>' + (ex.seat ? esc(ex.seat) : '<span class="dim">Not set</span>') + '</b></div>' +
+        (ex.notes ? '<p class="notes">' + esc(ex.notes) + '</p>' : '<p class="dim">No notes yet.</p>');
+    }
+    h += '</section>';
+
+    h += '<div class="history"><h2>History</h2><ul class="hlist">' + ex.entries.slice().reverse().map(function (e, i) {
       var idx = ex.entries.length - 1 - i;
-      var dd = idx > 0 ? parseFloat((e.w - ex.entries[idx - 1].w).toFixed(2)) : null;
+      if (ui.hist === idx) {
+        return '<li><div class="hedit pop">' + numField('hWeight', fmt(e.w), 'Weight', ex.unit, '') +
+          '<div class="field"><label class="lbl" for="hDate">Date</label><input id="hDate" type="date" value="' + e.d + '"></div>' +
+          '<p class="msg err" id="hErr" role="alert" hidden></p>' +
+          '<div class="stack"><button type="button" class="btn primary sm" data-act="hist-save">Save</button>' +
+          (ex.entries.length > 1 ? '<button type="button" class="btn ghost sm" data-act="hist-delete">Delete this entry</button>' : '') +
+          '<button type="button" class="btn ghost sm" data-act="hist-cancel">Cancel</button></div></div></li>';
+      }
+      var dd = idx > 0 ? round2(e.w - ex.entries[idx - 1].w) : null;
       var cls = dd === null ? 'flat' : dd > 0 ? 'up' : dd < 0 ? 'down' : 'flat';
-      var txt = dd === null ? 'Start' : dd === 0 ? '0' : sign(dd) + num(Math.abs(dd));
-      return '<li><span class="d">' + dateLabel(e.d) + '</span><span class="hw">' + num(e.w) + '</span><span class="hd prog ' + cls + '">' + txt + '</span></li>';
+      var txt = dd === null ? 'Start' : dd === 0 ? '0' : sign(dd) + fmt(Math.abs(dd));
+      return '<li><button type="button" class="hrow" data-act="hist-edit" data-i="' + idx + '" aria-label="Edit entry from ' + dateLabel(e.d) + '"><span class="d">' + dateLabel(e.d) + '</span><span class="hw">' + fmt(e.w) + '</span><span class="hd ' + cls + '">' + txt + '</span></button></li>';
     }).join('') + '</ul></div>';
 
-    h += '<div class="foot">';
-    h += ex.entries.length > 1 ? '<button type="button" class="link" data-act="undo">Undo last update</button>' : '<span></span>';
-    if (ui.confirmDel) {
-      h += '<div class="confirm">Delete this exercise?<button type="button" class="btn danger sm" data-act="delete-yes">Delete</button><button type="button" class="btn ghost sm" data-act="delete-no">Keep</button></div>';
-    } else {
-      h += '<button type="button" class="link" data-act="delete">Delete exercise</button>';
-    }
-    h += '</div>';
+    if (ex.entries.length > 1) h += '<div class="foot"><button type="button" class="link" data-act="undo">Undo last update</button></div>';
     return h;
   }
 
   function viewSettings() {
-    var h = header('<a class="back" href="#">← Back</a>') + '<h1 class="page-title">Settings</h1>';
+    var h = '<div class="top"><a class="circle" href="#" aria-label="Back">' + ICONS.back + '</a><span class="title">Settings</span>' + blank() + '</div>';
 
-    h += '<section class="panel"><h2>Weight unit</h2><div class="seg wide" role="group" aria-label="Weight unit">' +
-      ['lb', 'kg'].map(function (u) { return '<button type="button" data-act="unit-pick" data-u="' + u + '" aria-pressed="' + (S.unit === u) + '">' + u + '</button>'; }).join('') + '</div>';
-    if (ui.unitPending) {
-      var to = ui.unitPending;
-      h += '<div class="confirm-block"><p>Switch to ' + to + '? Convert your saved weights (rounded to the nearest ' + (to === 'kg' ? '0.25 kg' : '0.5 lb') + '), or keep the numbers and only change the label.</p>' +
-        '<div class="stack"><button type="button" class="btn primary sm" data-act="unit-convert">Convert weights</button>' +
-        '<button type="button" class="btn ghost sm" data-act="unit-keep">Keep numbers</button>' +
-        '<button type="button" class="btn ghost sm" data-act="unit-cancel">Cancel</button></div></div>';
-    } else {
-      h += '<p class="hint">Weights are saved exactly as you type them, so there are no conversion decimals.</p>';
-    }
-    h += '</section>';
+    h += '<section class="panel"><h2>Default unit</h2>' + unitSeg('sUnit', S.defaultUnit, 'default-unit') +
+      '<p class="hint">New exercises start with this unit. Your existing exercises keep theirs. Change an exercise’s unit from its edit screen.</p></section>';
+
+    h += '<section class="panel"><h2>Haptics</h2><div class="seg" role="group" aria-label="Haptics">' +
+      '<button type="button" data-act="haptics" data-v="on" aria-pressed="' + (S.haptics !== false) + '">On</button>' +
+      '<button type="button" data-act="haptics" data-v="off" aria-pressed="' + (S.haptics === false) + '">Off</button></div>' +
+      '<p class="hint">A light tap when you press a button. It uses an unofficial iPhone trick, so it may stop working after an iOS update.</p></section>';
 
     var last = S.lastBackup ? new Date(S.lastBackup).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) : 'never';
     h += '<section class="panel"><h2>Backup</h2><p class="hint">Last backup: ' + last + '. Your records live only on this device, so export a copy now and then.</p>' +
@@ -419,7 +569,7 @@ a { color: inherit; text-decoration: none; }
       '<input class="vh" id="importFile" type="file" accept="application/json,.json" tabindex="-1" aria-label="Choose backup file"></div>';
     if (ui.pending) {
       h += '<div class="confirm-block"><p>Replace your current data (' + S.exercises.length + ' exercise' + (S.exercises.length === 1 ? '' : 's') + ') with this backup (' +
-        ui.pending.exercises.length + ' exercise' + (ui.pending.exercises.length === 1 ? '' : 's') + ', in ' + ui.pending.unit + ')?</p>' +
+        ui.pending.exercises.length + ' exercise' + (ui.pending.exercises.length === 1 ? '' : 's') + ')?</p>' +
         '<div class="stack"><button type="button" class="btn primary sm" data-act="import-yes">Replace my data</button>' +
         '<button type="button" class="btn ghost sm" data-act="import-no">Cancel</button></div></div>';
     }
@@ -428,7 +578,7 @@ a { color: inherit; text-decoration: none; }
 
     h += '<section class="panel"><h2>Data</h2>';
     if (ui.confirmWipe) {
-      h += '<div class="confirm">Delete every exercise?<button type="button" class="btn danger sm" data-act="wipe-yes">Delete all</button><button type="button" class="btn ghost sm" data-act="wipe-no">Keep</button></div>';
+      h += '<p>Delete every exercise?</p><div class="stack"><button type="button" class="btn danger sm" data-act="wipe-yes">Delete all</button><button type="button" class="btn ghost sm" data-act="wipe-no">Keep</button></div>';
     } else {
       h += '<button type="button" class="btn ghost sm" data-act="wipe">Delete all exercises</button>';
     }
@@ -442,14 +592,35 @@ a { color: inherit; text-decoration: none; }
     var id = location.hash.replace('#', '');
     if (id === 'new') return { type: 'new' };
     if (id === 'settings') return { type: 'settings' };
-    var ex = S.exercises.filter(function (e) { return e.id === id; })[0];
+    if (id.indexOf('e-') === 0) { var e = findEx(id.slice(2)); return e ? { type: 'edit', ex: e } : { type: 'home' }; }
+    var ex = findEx(id);
     return ex ? { type: 'detail', ex: ex } : { type: 'home' };
   }
-  function render() {
-    if (!S.unit) { app.innerHTML = viewSetup(); return; }
+  function render(animate) {
+    app.className = 'app' + (animate && !reduced() ? ' enter' : '');
+    if (!S.defaultUnit) { app.innerHTML = viewSetup(); return; }
     var c = current();
-    app.innerHTML = c.type === 'new' ? viewNew() : c.type === 'settings' ? viewSettings() : c.type === 'detail' ? viewDetail(c.ex) : viewHome();
-    if (c.type === 'detail' && ui.editing) updatePreview();
+    app.innerHTML = c.type === 'new' ? viewForm(null) : c.type === 'edit' ? viewForm(c.ex) : c.type === 'settings' ? viewSettings() : c.type === 'detail' ? viewDetail(c.ex) : viewHome();
+    if (c.type === 'detail') {
+      if (ui.editing) updatePreview();
+      if (ui.roll) { var r = ui.roll; ui.roll = null; rollTo(document.getElementById('bigNum'), r.from, r.to); }
+    }
+  }
+
+  function rollTo(el, from, to) {
+    if (!el || from === to || reduced()) return;
+    var dec = String(round2(from)).indexOf('.') > -1 || String(round2(to)).indexOf('.') > -1;
+    var t0 = null, dur = 520;
+    el.textContent = fmt(from);
+    function step(ts) {
+      if (!el.isConnected) return;
+      if (t0 === null) t0 = ts;
+      var p = Math.min(1, (ts - t0) / dur), e = 1 - Math.pow(1 - p, 3);
+      var v = from + (to - from) * e;
+      el.textContent = fmt(p >= 1 ? to : (dec ? Math.round(v * 10) / 10 : Math.round(v)));
+      if (p < 1) requestAnimationFrame(step);
+    }
+    requestAnimationFrame(step);
   }
 
   function updatePreview() {
@@ -457,16 +628,69 @@ a { color: inherit; text-decoration: none; }
     var inp = document.getElementById('uWeight'), pv = document.getElementById('uPreview'), btn = document.getElementById('uSave');
     if (!inp || !pv) return;
     var ub = document.getElementById('uUndo'); if (ub) ub.disabled = !ui.stack.length;
-    var v = parseFloat(inp.value), cur = c.ex.entries[c.ex.entries.length - 1].w;
-    if (!(v > 0)) { pv.textContent = ''; btn.disabled = true; return; }
-    var d = parseFloat((v - cur).toFixed(2));
+    var v = parseNum(inp.value), cur = c.ex.entries[c.ex.entries.length - 1].w;
+    if (!validW(v)) { pv.textContent = ''; btn.disabled = true; return; }
+    var d = round2(v - cur);
     btn.disabled = d === 0;
-    pv.innerHTML = '<b>' + num(cur) + '</b> → <b>' + num(v) + '</b> ' + S.unit + (d !== 0 ? ' (' + sign(d) + num(Math.abs(d)) + ')' : '');
+    pv.innerHTML = '<b>' + fmt(cur) + '</b> → <b>' + fmt(v) + '</b> ' + c.ex.unit + (d !== 0 ? ' (' + sign(d) + fmt(Math.abs(d)) + ')' : '');
+  }
+
+  /* ---------- form helpers ---------- */
+  function $(id) { return document.getElementById(id); }
+  function pressedOf(containerId, attr) {
+    var b = document.querySelector('#' + containerId + ' button[aria-pressed="true"]');
+    return b ? b.getAttribute(attr) : '';
+  }
+  function setPressed(containerId, attr, val) {
+    var bs = document.querySelectorAll('#' + containerId + ' button');
+    for (var i = 0; i < bs.length; i++) bs[i].setAttribute('aria-pressed', String(bs[i].getAttribute(attr) === val));
+  }
+  function formErr(msg) { var el = $('fErr'); if (!el) return; el.textContent = msg; el.hidden = !msg; }
+  function readForm() {
+    return {
+      name: $('fName').value.trim(), brand: $('fBrand').value.trim(),
+      group: pressedOf('gChips', 'data-g'), unit: pressedOf('fUnit', 'data-u'),
+      w: $('fWeight') ? parseNum($('fWeight').value) : null,
+      seat: $('fSeat') ? $('fSeat').value.trim() : '', notes: $('fNotes') ? $('fNotes').value.trim() : ''
+    };
+  }
+
+  function convertEntries(ex, to) {
+    var step = to === 'kg' ? 0.25 : 0.5, f = to === 'kg' ? 0.45359237 : 1 / 0.45359237;
+    ex.entries.forEach(function (en) { en.w = Math.max(step, round2(Math.round(en.w * f / step) * step)); });
+  }
+
+  function submitForm() {
+    var form = $('exForm'), id = form.getAttribute('data-id'), f = readForm();
+    if (!f.name) { formErr('Enter an exercise name.'); return; }
+    if (!f.group) { formErr('Pick a muscle group.'); return; }
+    if (!id) {
+      if (!validW(f.w)) { formErr('Enter a starting weight, like 72.5.'); return; }
+      S.exercises.push({ id: uid(), name: f.name, brand: f.brand, group: f.group, unit: f.unit || S.defaultUnit, seat: f.seat.slice(0, 40), notes: f.notes.slice(0, 300), entries: [{ d: iso(new Date()), w: round2(f.w) }] });
+      persist(); location.hash = ''; return;
+    }
+    var ex = findEx(id); if (!ex) return;
+    if (f.unit && f.unit !== ex.unit) {
+      $('unitAskTo').textContent = f.unit;
+      $('unitAskStep').textContent = f.unit === 'kg' ? '0.25 kg' : '0.5 lb';
+      $('unitAsk').hidden = false; $('fSave').hidden = true; formErr('');
+      $('unitAsk').scrollIntoView({ block: 'nearest', behavior: reduced() ? 'auto' : 'smooth' });
+      return;
+    }
+    applyEdit(null);
+  }
+  function applyEdit(mode) {
+    var form = $('exForm'), ex = findEx(form.getAttribute('data-id')); if (!ex) return;
+    var f = readForm();
+    if (!f.name || !f.group) { formErr(!f.name ? 'Enter an exercise name.' : 'Pick a muscle group.'); return; }
+    ex.name = f.name; ex.brand = f.brand; ex.group = f.group;
+    if (f.unit && f.unit !== ex.unit) { if (mode === 'convert') convertEntries(ex, f.unit); ex.unit = f.unit; }
+    persist(); location.hash = ex.id;
   }
 
   /* ---------- backup ---------- */
   function backupJson() {
-    return JSON.stringify({ app: 'weight-notes', version: 1, exportedAt: new Date().toISOString(), unit: S.unit, exercises: S.exercises }, null, 2);
+    return JSON.stringify({ app: 'weight-notes', version: 2, exportedAt: new Date().toISOString(), defaultUnit: S.defaultUnit, exercises: S.exercises }, null, 2);
   }
   function markBackup() { S.lastBackup = Date.now(); persist(); }
 
@@ -483,15 +707,15 @@ a { color: inherit; text-decoration: none; }
         a.href = url; a.download = name; a.style.display = 'none';
         document.body.appendChild(a); a.click(); a.remove();
         setTimeout(function () { URL.revokeObjectURL(url); }, 15000);
-        markBackup(); ui.msg = { t: 'ok', s: 'Backup downloaded: ' + name }; render();
+        markBackup(); ui.msg = { t: 'ok', s: 'Backup downloaded: ' + name }; render(false);
       } catch (e) {
-        ui.msg = { t: 'err', s: 'Couldn’t create the backup file on this device.' }; render();
+        ui.msg = { t: 'err', s: 'Couldn’t create the backup file on this device.' }; render(false);
       }
     }
 
     if (file && navigator.canShare && navigator.canShare({ files: [file] }) && navigator.share) {
       navigator.share({ files: [file], title: 'Weight Notes backup' }).then(function () {
-        markBackup(); ui.msg = { t: 'ok', s: 'Backup shared. Save it to Files or send it to yourself.' }; render();
+        markBackup(); ui.msg = { t: 'ok', s: 'Backup shared. Save it to Files or send it to yourself.' }; render(false);
       }).catch(function (err) {
         if (err && err.name === 'AbortError') return;
         download();
@@ -502,23 +726,33 @@ a { color: inherit; text-decoration: none; }
   }
 
   /* ---------- events ---------- */
-  document.addEventListener('input', function (e) { if (e.target.id === 'uWeight') updatePreview(); });
-  document.addEventListener('keydown', function (e) {
-    if (e.key === 'Enter' && e.target.id === 'uWeight') {
-      var b = document.getElementById('uSave'); if (b && !b.disabled) b.click();
+  document.addEventListener('click', function (e) {
+    if (e.target.closest && e.target.closest('button, a')) haptic();
+  }, true);
+
+  document.addEventListener('input', function (e) {
+    var t = e.target;
+    if (t.classList && t.classList.contains('numin')) {
+      var clean = t.value.replace(/[^0-9.,]/g, '');
+      if (clean !== t.value) t.value = clean;
+      if (t.id === 'uWeight') updatePreview();
+    }
+    if (t.id === 'fName' && ui.form && !ui.form.touched) {
+      var g = classify(t.value);
+      setPressed('gChips', 'data-g', g || '');
+      var hint = $('gHint'); if (hint) hint.textContent = g ? 'Suggested from the name. Tap a group to change it.' : '';
     }
   });
 
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Enter' && e.target.id === 'uWeight') { var b = $('uSave'); if (b && !b.disabled) b.click(); }
+    if (e.key === 'Enter' && e.target.id === 'hWeight') { var h = document.querySelector('[data-act="hist-save"]'); if (h) h.click(); }
+  });
+
   document.addEventListener('submit', function (e) {
-    if (e.target.id !== 'newForm') return;
+    if (e.target.id !== 'exForm') return;
     e.preventDefault();
-    var name = document.getElementById('nName').value.trim();
-    var w = Math.round(parseFloat(document.getElementById('nWeight').value) * 100) / 100;
-    if (!name || !(w > 0) || w >= 10000) return;
-    S.exercises.push({ id: uid(), name: name, brand: document.getElementById('nBrand').value.trim(), entries: [{ d: iso(new Date()), w: w }] });
-    persist();
-    location.hash = '';
-    render();
+    submitForm();
   });
 
   document.addEventListener('change', function (e) {
@@ -526,16 +760,16 @@ a { color: inherit; text-decoration: none; }
     var f = e.target.files && e.target.files[0];
     if (!f) return;
     var input = e.target;
-    if (f.size > 5 * 1024 * 1024) { input.value = ''; ui.msg = { t: 'err', s: 'That file is too large to be a backup.' }; render(); return; }
+    if (f.size > 5 * 1024 * 1024) { input.value = ''; ui.msg = { t: 'err', s: 'That file is too large to be a backup.' }; render(false); return; }
     var rd = new FileReader();
     rd.onload = function () {
       var clean = null;
       try { clean = sanitizeBackup(JSON.parse(rd.result)); } catch (err) { clean = null; }
       if (clean) { ui.pending = clean; ui.msg = null; }
       else { ui.pending = null; ui.msg = { t: 'err', s: 'That file isn’t a Weight Notes backup.' }; }
-      render();
+      render(false);
     };
-    rd.onerror = function () { ui.msg = { t: 'err', s: 'Couldn’t read that file.' }; render(); };
+    rd.onerror = function () { ui.msg = { t: 'err', s: 'Couldn’t read that file.' }; render(false); };
     rd.readAsText(f);
   });
 
@@ -544,77 +778,105 @@ a { color: inherit; text-decoration: none; }
     var act = t.getAttribute('data-act');
 
     if (act === 'setup-unit') {
-      S.unit = t.getAttribute('data-u'); persist();
+      S.defaultUnit = t.getAttribute('data-u'); persist();
       try { if (navigator.storage && navigator.storage.persist) navigator.storage.persist(); } catch (err) {}
-      render(); return;
+      render(true); return;
     }
-    if (act === 'hint-dismiss') { S.hintDismissed = true; persist(); render(); return; }
+    if (act === 'hint-dismiss') { S.hintDismissed = true; persist(); render(false); return; }
+
+    /* form (new / edit) */
+    if (act === 'form-group') {
+      setPressed('gChips', 'data-g', t.getAttribute('data-g'));
+      if (ui.form) ui.form.touched = true;
+      var gh = $('gHint'); if (gh) gh.textContent = '';
+      formErr(''); return;
+    }
+    if (act === 'form-unit') {
+      var u = t.getAttribute('data-u'); setPressed('fUnit', 'data-u', u);
+      var lbl = $('fUnitLbl'); if (lbl) lbl.textContent = u;
+      return;
+    }
+    if (act === 'edit-convert') { applyEdit('convert'); return; }
+    if (act === 'edit-keep') { applyEdit('keep'); return; }
+    if (act === 'edit-unit-cancel') {
+      var ex0 = findEx($('exForm').getAttribute('data-id'));
+      if (ex0) setPressed('fUnit', 'data-u', ex0.unit);
+      $('unitAsk').hidden = true; $('fSave').hidden = false; return;
+    }
+    if (act === 'del-ask') { $('delBox').hidden = true; $('delAsk').hidden = false; return; }
+    if (act === 'del-no') { $('delAsk').hidden = true; $('delBox').hidden = false; return; }
+    if (act === 'del-yes') {
+      var id0 = $('exForm').getAttribute('data-id');
+      S.exercises = S.exercises.filter(function (x) { return x.id !== id0; });
+      persist(); location.hash = ''; return;
+    }
 
     /* settings */
-    if (act === 'unit-pick') {
-      var u = t.getAttribute('data-u');
-      if (u === S.unit) { ui.unitPending = null; render(); return; }
-      if (!S.exercises.length) { S.unit = u; persist(); ui.unitPending = null; render(); return; }
-      ui.unitPending = u; render(); return;
-    }
-    if (act === 'unit-cancel') { ui.unitPending = null; render(); return; }
-    if (act === 'unit-keep') { S.unit = ui.unitPending; ui.unitPending = null; persist(); render(); return; }
-    if (act === 'unit-convert') {
-      var to = ui.unitPending, step = to === 'kg' ? 0.25 : 0.5, f = to === 'kg' ? 0.45359237 : 1 / 0.45359237;
-      S.exercises.forEach(function (ex) {
-        ex.entries.forEach(function (en) { en.w = Math.max(step, parseFloat((Math.round(en.w * f / step) * step).toFixed(2))); });
-      });
-      S.unit = to; ui.unitPending = null; persist(); render(); return;
-    }
+    if (act === 'default-unit') { S.defaultUnit = t.getAttribute('data-u'); persist(); render(false); return; }
+    if (act === 'haptics') { S.haptics = t.getAttribute('data-v') === 'on'; persist(); render(false); if (S.haptics) haptic(); return; }
     if (act === 'export') { exportBackup(); return; }
-    if (act === 'import') { var fi = document.getElementById('importFile'); if (fi) fi.click(); return; }
-    if (act === 'import-no') { ui.pending = null; render(); return; }
+    if (act === 'import') { var fi = $('importFile'); if (fi) fi.click(); return; }
+    if (act === 'import-no') { ui.pending = null; render(false); return; }
     if (act === 'import-yes') {
       if (!ui.pending) return;
-      S.unit = ui.pending.unit; S.exercises = ui.pending.exercises;
+      S.defaultUnit = ui.pending.defaultUnit; S.exercises = ui.pending.exercises;
       var n = S.exercises.length; ui.pending = null; persist();
-      ui.msg = { t: 'ok', s: 'Imported ' + n + ' exercise' + (n === 1 ? '' : 's') + '.' }; render(); return;
+      ui.msg = { t: 'ok', s: 'Imported ' + n + ' exercise' + (n === 1 ? '' : 's') + '.' }; render(false); return;
     }
-    if (act === 'wipe') { ui.confirmWipe = true; render(); return; }
-    if (act === 'wipe-no') { ui.confirmWipe = false; render(); return; }
-    if (act === 'wipe-yes') { S.exercises = []; persist(); ui.confirmWipe = false; ui.msg = { t: 'ok', s: 'All exercises deleted.' }; render(); return; }
+    if (act === 'wipe') { ui.confirmWipe = true; render(false); return; }
+    if (act === 'wipe-no') { ui.confirmWipe = false; render(false); return; }
+    if (act === 'wipe-yes') { S.exercises = []; persist(); ui.confirmWipe = false; ui.msg = { t: 'ok', s: 'All exercises deleted.' }; render(false); return; }
 
     /* exercise detail */
     var c = current();
     if (c.type !== 'detail') return;
     var ex = c.ex;
-    if (act === 'edit') { ui.editing = true; ui.stack = []; render(); var i = document.getElementById('uWeight'); if (i) { i.focus(); i.select(); } }
-    else if (act === 'cancel-edit') { ui.editing = false; ui.stack = []; render(); }
+    if (act === 'edit') { ui.editing = true; ui.stack = []; render(false); }
+    else if (act === 'cancel-edit') { ui.editing = false; ui.stack = []; render(false); }
     else if (act === 'chip') {
-      var inp = document.getElementById('uWeight'); var base = parseFloat(inp.value);
-      if (!(base >= 0)) base = ex.entries[ex.entries.length - 1].w;
-      var next = parseFloat((base + parseFloat(t.getAttribute('data-v'))).toFixed(2));
+      var inp = $('uWeight'); var base = parseNum(inp.value);
+      if (!isFinite(base)) base = ex.entries[ex.entries.length - 1].w;
+      var next = round2(base + parseFloat(t.getAttribute('data-v')));
       if (!(next > 0)) return;
-      ui.stack.push(inp.value); inp.value = num(next); updatePreview();
+      ui.stack.push(inp.value); inp.value = fmt(next); updatePreview();
     }
     else if (act === 'undo-chip') {
-      var inp2 = document.getElementById('uWeight');
+      var inp2 = $('uWeight');
       if (ui.stack.length) { inp2.value = ui.stack.pop(); updatePreview(); }
     }
     else if (act === 'save-weight') {
-      var v = Math.round(parseFloat(document.getElementById('uWeight').value) * 100) / 100;
-      if (!(v > 0) || v >= 10000) return;
-      if (v === ex.entries[ex.entries.length - 1].w) return;
+      var v = parseNum($('uWeight').value);
+      if (!validW(v)) return;
+      v = round2(v);
+      var prev = ex.entries[ex.entries.length - 1].w;
+      if (v === prev) return;
       ex.entries.push({ d: iso(new Date()), w: v });
-      persist(); ui.editing = false; ui.stack = []; render();
+      persist(); ui.editing = false; ui.stack = []; ui.roll = { from: prev, to: v }; render(false);
     }
-    else if (act === 'undo') { if (ex.entries.length > 1) { ex.entries.pop(); persist(); render(); } }
-    else if (act === 'delete') { ui.confirmDel = true; render(); }
-    else if (act === 'delete-no') { ui.confirmDel = false; render(); }
-    else if (act === 'delete-yes') {
-      S.exercises = S.exercises.filter(function (x) { return x.id !== ex.id; });
-      persist(); ui.confirmDel = false; location.hash = ''; render();
+    else if (act === 'undo') { if (ex.entries.length > 1) { ex.entries.pop(); persist(); render(false); } }
+    else if (act === 'setup-edit') { ui.setupEdit = true; render(false); }
+    else if (act === 'setup-cancel') { ui.setupEdit = false; render(false); }
+    else if (act === 'setup-save') {
+      ex.seat = $('sSeat').value.trim().slice(0, 40); ex.notes = $('sNotes').value.trim().slice(0, 300);
+      persist(); ui.setupEdit = false; render(false);
+    }
+    else if (act === 'hist-edit') { ui.hist = parseInt(t.getAttribute('data-i'), 10); render(false); }
+    else if (act === 'hist-cancel') { ui.hist = -1; render(false); }
+    else if (act === 'hist-delete') {
+      if (ex.entries.length > 1 && ui.hist > -1) { ex.entries.splice(ui.hist, 1); persist(); ui.hist = -1; render(false); }
+    }
+    else if (act === 'hist-save') {
+      var w = parseNum($('hWeight').value), d = $('hDate').value, he = $('hErr');
+      if (!validW(w)) { he.textContent = 'Enter a weight, like 72.5.'; he.hidden = false; return; }
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(d)) { he.textContent = 'Pick a date.'; he.hidden = false; return; }
+      ex.entries[ui.hist] = { d: d, w: round2(w) };
+      sortEntries(ex); persist(); ui.hist = -1; render(false);
     }
   });
 
-  window.addEventListener('hashchange', function () { resetUi(); render(); window.scrollTo(0, 0); });
+  window.addEventListener('hashchange', function () { resetUi(); render(true); window.scrollTo(0, 0); });
 
-  render();
+  render(true);
 
   if ('serviceWorker' in navigator && /^https?:$/.test(location.protocol)) {
     window.addEventListener('load', function () {
