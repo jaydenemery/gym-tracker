@@ -189,6 +189,36 @@ input.numin { font-size: 30px !important; font-weight: 600 !important; font-vari
   *, *::before, *::after { animation: none !important; transition: none !important; }
 }
 @media (max-width: 380px) { .bignum { font-size: 84px; } }
+
+/* Weight Notes compact redesign */
+:root { --bg:#0c0e0f; --surface:#1c2022; --surface2:#24282a; --up:#4ed093; --down:#ff6b60; }
+.app {gap:16px}
+.home-head {display:flex;align-items:center;gap:9px;min-height:48px}
+.home-heading {flex:1;min-width:0;display:flex;flex-direction:column;gap:1px}
+.home-heading strong {font-size:20px;letter-spacing:-.03em}
+.home-heading small {font-size:12px;color:var(--muted)}
+.home-head .circle {width:40px;height:40px;flex:none;font-size:23px}
+.home-search {width:100%;height:46px;padding:0 16px;background:var(--surface);border:1px solid var(--line);border-radius:14px;font-size:16px;outline:none}
+.filter-row {display:flex;gap:7px;overflow-x:auto;padding:2px 0 6px;scrollbar-width:none}
+.filter-row::-webkit-scrollbar {display:none}
+.filter-chip {flex:none;min-height:36px;border-radius:18px;border:1px solid var(--line);background:var(--surface);color:var(--muted);padding:0 13px;font-size:13px;font-weight:600}
+.filter-chip[aria-pressed=true] {background:#f5f5f5;color:#101112}
+#homeResults {display:flex;flex-direction:column;gap:20px}
+.grid {gap:10px}.card {min-height:132px;padding:13px;border-radius:18px;justify-content:space-between}
+.card-main {display:block;flex:1;min-width:0}.cname {font-size:14px;line-height:1.25}.cval {font-size:clamp(28px,8vw,36px);margin-top:12px}.cval small {font-size:13px}
+.card-foot {display:flex;align-items:center;justify-content:space-between;gap:4px;margin-top:8px}
+.cstat {font-size:12px;gap:3px;min-width:0}.cstat .sti {width:13px;height:13px}
+.quick-add {width:34px;height:34px;border-radius:11px;border:1px solid #3b4143;background:#2b3032;color:#fff;font-size:23px;line-height:1;flex:none}
+.list-view {grid-template-columns:1fr}.list-view .card {min-height:84px;display:grid;grid-template-columns:1fr auto;align-items:center;gap:12px}.list-view .cval {font-size:27px;margin-top:5px}.list-view .card-foot {margin:0;gap:10px}
+.modal-backdrop {position:fixed;inset:0;background:rgba(0,0,0,.72);z-index:50;display:flex;align-items:flex-end;justify-content:center;padding:16px 16px calc(env(safe-area-inset-bottom,0px) + 16px)}
+.quick-modal {background:#1c2022;border:1px solid #343a3d;border-radius:22px;padding:18px;width:min(100%,480px);display:flex;flex-direction:column;gap:18px}
+.quick-head {display:flex;justify-content:space-between;align-items:center;gap:10px}.quick-head h2 {font-size:18px;line-height:1.25}
+.optional {display:flex;flex-direction:column;gap:12px}.optional summary {font-size:14px;color:var(--muted);cursor:pointer}.optional[open] .field {margin-top:12px}
+.setup-panel {padding:15px;gap:10px}.setup-panel .cardhead {margin:0}.setup-panel h3 {font-size:17px;font-weight:600}.setup-panel .link {font-size:14px;text-decoration:none}
+.setup-panel .kv {font-size:14px;align-items:center}.setup-panel .kv span {color:var(--muted)}.setup-panel .kv b {font-size:14px;font-weight:600}
+.setup-panel .notes {font-size:14px;line-height:1.5;color:#e2e5e6;border-top:1px solid var(--line);padding-top:10px}
+.setup-panel .lbl {font-size:13px;color:var(--muted);font-weight:500}.setup-panel .field input {min-height:46px;font-size:16px}.setup-panel .field textarea {min-height:68px;font-size:16px}
+.setup-panel .btn {min-height:44px}
 </style>
 </head>
 <body>
@@ -203,9 +233,9 @@ input.numin { font-size: 30px !important; font-weight: 600 !important; font-vari
   var storageOK = true;
 
   /* The user picks the type by hand when adding an exercise. A type is one of these keys, or a custom name they typed. */
-  var GROUPS = [['chest', 'Chest'], ['back', 'Back'], ['shoulder', 'Shoulder'], ['tricep', 'Tricep'], ['bicep', 'Bicep'], ['legs', 'Legs'], ['core', 'Core']];
+  var GROUPS = [['chest', 'Chest'], ['back', 'Back'], ['shoulder', 'Shoulder'], ['arms', 'Arms'], ['legs', 'Legs'], ['core', 'Core']];
   var GNAME = {}; GROUPS.forEach(function (g) { GNAME[g[0]] = g[1]; });
-  var LEGACY = { shoulders: 'shoulder', triceps: 'tricep', biceps: 'bicep', leg: 'legs', abs: 'core', abdominals: 'core' };
+  var LEGACY = { tricep: 'arms', bicep: 'arms', triceps: 'arms', biceps: 'arms', shoulders: 'shoulder', leg: 'legs', abs: 'core', abdominals: 'core' };
   var CUSTOM_MAX = 24;
   function normalizeGroup(g) {
     g = String(g == null ? '' : g).replace(/\s+/g, ' ').trim().slice(0, CUSTOM_MAX).trim();
@@ -263,7 +293,7 @@ input.numin { font-size: 30px !important; font-weight: 600 !important; font-vari
     if (typeof g !== 'string') return '';
     var k = g.trim().toLowerCase();
     if (legacy && k === 'other') return '';
-    if (legacy && k === 'arms') return 'Arms';
+    if (k === 'arms') return 'arms';
     return normalizeGroup(g);
   }
 
@@ -311,20 +341,20 @@ input.numin { font-size: 30px !important; font-weight: 600 !important; font-vari
     try { localStorage.setItem('__wn', '1'); localStorage.removeItem('__wn'); } catch (e) { storageOK = false; }
     try { var r = localStorage.getItem(KEY); if (r) s = JSON.parse(r); } catch (e) { s = null; }
     if (!s || typeof s !== 'object') s = {};
-    return { exercises: sanitizeExercises(s.exercises, fallbackOf(s), !(Number(s.v) >= 4)), lastBackup: +s.lastBackup || 0, hintDismissed: !!s.hintDismissed };
+    return { exercises: sanitizeExercises(s.exercises, fallbackOf(s), !(Number(s.v) >= 4)), lastBackup: +s.lastBackup || 0, hintDismissed: !!s.hintDismissed, layout: s.layout === 'list' ? 'list' : 'grid', unit: s.unit === 'kg' ? 'kg' : 'lb' };
   }
 
   var S = load();
   function persist() {
     try {
-      localStorage.setItem(KEY, JSON.stringify({ v: 4, exercises: S.exercises, lastBackup: S.lastBackup, hintDismissed: S.hintDismissed }));
+      localStorage.setItem(KEY, JSON.stringify({ v: 4, exercises: S.exercises, lastBackup: S.lastBackup, hintDismissed: S.hintDismissed, layout: S.layout, unit: S.unit }));
       storageOK = true;
     } catch (e) { storageOK = false; }
   }
   persist(); // writes migrated groups back so they are stable
 
   var ui = {};
-  function resetUi() { ui = { customOpen: false, editing: false, pending: null, confirmWipe: false, msg: null, setupEdit: false, hist: -1, form: null, roll: null, delArmed: false }; }
+  function resetUi() { ui = { customOpen: false, editing: false, pending: null, confirmWipe: false, msg: null, setupEdit: false, hist: -1, form: null, roll: null, delArmed: false, filter: 'All', search: '', quick: null, quickError: '' }; }
   resetUi();
 
   function stats(ex) {
@@ -371,34 +401,39 @@ input.numin { font-size: 30px !important; font-weight: 600 !important; font-vari
   }
 
   function cardHtml(ex) {
-    var st = stats(ex), t = deltaText(st, ex.unit);
-    return '<a class="card" href="#' + ex.id + '"><div class="cname">' + esc(ex.name) + '</div>' +
+    var st = stats(ex), previous = ex.entries.length > 1 ? ex.entries[ex.entries.length-2].w : st.cur;
+    var diff = round2(st.cur - previous), cls = diff > 0 ? 'up' : diff < 0 ? 'down' : 'flat';
+    var label = diff ? sign(diff) + fmt(Math.abs(diff)) + ' ' + ex.unit : 'No change';
+    return '<div class="card"><a class="card-main" href="#' + ex.id + '"><div class="cname">' + esc(ex.name) + '</div>' +
       (ex.brand ? '<div class="cbrand">' + esc(ex.brand) + '</div>' : '') +
-      '<div class="cval">' + fmt(st.cur) + '<small>' + ex.unit + '</small></div>' +
-      '<div class="cstat ' + st.cls + '">' + statIcon(st.cls) + (t ? '<span>' + t + '</span>' : '') + '</div></a>';
+      '<div class="cval">' + fmt(st.cur) + '<small>' + ex.unit + '</small></div></a>' +
+      '<div class="card-foot"><div class="cstat ' + cls + '">' + (diff ? statIcon(cls) : '') + '<span>' + label + '</span></div>' +
+      '<button type="button" class="quick-add" data-act="quick-open" data-id="' + esc(ex.id) + '" aria-label="Update ' + esc(ex.name) + ' weight">+</button></div></div>';
   }
 
   function viewHome() {
-    var h = '<div class="top">' + circle('#settings', 'sliders', 'Settings') + '<span class="title">Weight Notes</span>' + circle('#new', 'plus', 'Add exercise') + '</div>';
-    if (!S.exercises.length) {
-      h += '<div class="empty">Nothing here yet.<br>Tap + to add your first exercise.</div>';
-    } else {
-      var buckets = {}, custom = [];
-      S.exercises.forEach(function (e) {
-        var k = !e.group ? '' : GNAME[e.group] ? e.group : 'c:' + e.group.toLowerCase();
-        if (!buckets[k]) { buckets[k] = []; if (k.indexOf('c:') === 0) custom.push(k); }
-        buckets[k].push(e);
-      });
-      function section(title, list) { return '<section class="grp"><h2>' + esc(title) + '</h2><div class="grid">' + list.map(cardHtml).join('') + '</div></section>'; }
-      GROUPS.forEach(function (g) { if (buckets[g[0]]) h += section(g[1], buckets[g[0]]); });
-      custom.forEach(function (k) { h += section(buckets[k][0].group, buckets[k]); });
-      if (buckets['']) {
-        h += '<section class="grp" id="needsGroup"><h2>Needs a group</h2><p class="hint">Open an exercise, tap the pencil, and pick a type.</p><div class="grid">' + buckets[''].map(cardHtml).join('') + '</div></section>';
-      }
+    var h = '<div class="home-head"><a class="circle" href="#settings" aria-label="Settings">' + ICONS.sliders + '</a><div class="home-heading"><strong>Weight Notes</strong><small>Your exercise tracker</small></div><button class="circle" type="button" data-act="layout" aria-label="Switch layout">' + (S.layout === 'list' ? '▦' : '☷') + '</button><a class="circle" href="#new" aria-label="Add exercise">' + ICONS.plus + '</a></div>';
+    h += '<input id="homeSearch" class="home-search" type="search" placeholder="Search exercises..." aria-label="Search exercises" value="' + esc(ui.search) + '">';
+    h += '<div class="filter-row" role="group" aria-label="Muscle group filters">' + ['All'].concat(GROUPS.map(function(g){return g[1];}),['Custom']).map(function(g){return '<button type="button" class="filter-chip" data-act="filter" data-filter="' + g + '" aria-pressed="' + (ui.filter === g) + '">' + g + '</button>';}).join('') + '</div>';
+    h += '<div id="homeResults"></div>';
+    if (!storageOK) h += '<p class="msg err">Storage unavailable. Export a backup in Settings.</p>';
+    if (showInstallHint()) h += '<div class="note"><span>Install: Share → Add to Home Screen. The installed app has separate storage from Safari.</span><button type="button" class="link" data-act="hint-dismiss">Got it</button></div>';
+    if (ui.quick) {
+      var q = findEx(ui.quick);
+      if (q) h += '<div class="modal-backdrop"><section class="quick-modal" role="dialog" aria-modal="true" aria-label="Update weight"><div class="quick-head"><h2>' + esc(q.name) + '</h2><button class="link" type="button" data-act="quick-cancel">Cancel</button></div>' + numField('quickWeight',fmt(stats(q).cur),'New weight',q.unit,'') + '<p class="msg err" id="quickError"' + (ui.quickError ? '' : ' hidden') + '>' + esc(ui.quickError) + '</p><button class="btn save" type="button" data-act="quick-save">Save weight</button></section></div>';
     }
-    if (!storageOK) h += '<p class="msg err">This browser can’t save data (private browsing?). Export a backup in Settings before you close the app.</p>';
-    if (showInstallHint()) h += '<div class="note"><span>Install it first: Share, then Add to Home Screen. The installed app keeps its own data, separate from Safari.</span><button type="button" class="link" data-act="hint-dismiss">Got it</button></div>';
     return h;
+  }
+  function refreshHomeResults() {
+    var el = $('homeResults'); if (!el) return;
+    var term = ui.search.trim().toLowerCase();
+    var selected = S.exercises.filter(function(ex){
+      var category = GNAME[ex.group] || 'Custom';
+      return (ui.filter === 'All' || ui.filter === category) && (!term || ex.name.toLowerCase().indexOf(term) !== -1);
+    });
+    var buckets = {}, order = [];
+    selected.forEach(function(ex){ var group = GNAME[ex.group] || ex.group || 'Other'; if (!buckets[group]) {buckets[group]=[];order.push(group);} buckets[group].push(ex); });
+    el.innerHTML = order.map(function(group){return '<section class="grp"><h2>' + esc(group) + '</h2><div class="grid ' + (S.layout === 'list' ? 'list-view' : '') + '">' + buckets[group].map(cardHtml).join('') + '</div></section>';}).join('') || '<p class="empty">' + (S.exercises.length ? 'No matching exercises.' : 'No exercises yet. Tap + to add one.') + '</p>';
   }
 
   function numField(id, value, label, unit, unitId) {
@@ -421,25 +456,21 @@ input.numin { font-size: 30px !important; font-weight: 600 !important; font-vari
 
   function viewForm(ex, newGroup) {
     var isNew = !ex;
-    var h = '<div class="top"><a class="circle" href="' + (isNew ? '#new' : '#' + ex.id) + '" aria-label="Back">' + ICONS.back + '</a><span class="title">' + (isNew ? 'New exercise' : 'Edit exercise') + '</span>' + blank() + '</div>';
-    if (isNew) h += '<a class="gpill" href="#new" aria-label="Change type"><b>' + esc(groupLabel(newGroup)) + '</b><span>Change</span></a>';
+    var h = '<div class="top"><a class="circle" href="' + (isNew ? '#' : '#' + ex.id) + '" aria-label="Back">' + ICONS.back + '</a><span class="title">' + (isNew ? 'New exercise' : 'Edit exercise') + '</span>' + blank() + '</div>';
+    
     h += '<form class="stack-lg" id="exForm" autocomplete="off" novalidate data-id="' + (ex ? ex.id : '') + '" data-group="' + esc(isNew ? newGroup : '') + '">' +
       '<section class="panel"><div class="field"><label class="lbl" for="fName">Exercise</label><input id="fName" type="text" maxlength="60" autocapitalize="words" value="' + esc(ex ? ex.name : '') + '"></div>' +
-      '<div class="field"><label class="lbl" for="fBrand">Brand (optional)</label><input id="fBrand" type="text" maxlength="60" autocapitalize="words" value="' + esc(ex ? ex.brand : '') + '"></div></section>';
-    if (!isNew) {
-      var isCustom = !!ex.group && !GNAME[ex.group];
+      '<details class="optional"><summary>Optional setup</summary><div class="field"><label class="lbl" for="fBrand">Brand</label><input id="fBrand" type="text" maxlength="60" autocapitalize="words" value="' + esc(ex ? ex.brand : '') + '"></div>' + (isNew ? '<div class="field"><label class="lbl" for="fSeat">Seat height</label><input id="fSeat" maxlength="40"></div><div class="field"><label class="lbl" for="fNotes">Notes</label><textarea id="fNotes" rows="2" maxlength="300"></textarea></div>' : '') + '</details></section>';
+    if (true) {
+      var activeGroup = ex ? ex.group : newGroup;
+      var isCustom = !!activeGroup && !GNAME[activeGroup];
       h += '<section class="panel"><span class="lbl" id="gLbl">Type</span><div class="gchips" id="gChips" role="group" aria-labelledby="gLbl">' +
-        GROUPS.map(function (g) { return '<button type="button" class="gchip" data-act="form-group" data-g="' + g[0] + '" aria-pressed="' + (ex.group === g[0]) + '">' + g[1] + '</button>'; }).join('') +
+        GROUPS.map(function (g) { return '<button type="button" class="gchip" data-act="form-group" data-g="' + g[0] + '" aria-pressed="' + (activeGroup === g[0]) + '">' + g[1] + '</button>'; }).join('') +
         '<button type="button" class="gchip" data-act="form-group" data-g="__custom" aria-pressed="' + isCustom + '">Custom</button></div>' +
-        '<div class="field" id="gCustomBox"' + (isCustom ? '' : ' hidden') + '><label class="lbl" for="fCustom">Custom type</label><input id="fCustom" type="text" maxlength="' + CUSTOM_MAX + '" autocapitalize="words" value="' + esc(isCustom ? ex.group : '') + '"></div></section>';
+        '<div class="field" id="gCustomBox"' + (isCustom ? '' : ' hidden') + '><label class="lbl" for="fCustom">Custom type</label><input id="fCustom" type="text" maxlength="' + CUSTOM_MAX + '" autocapitalize="words" value="' + esc(isCustom ? activeGroup : '') + '"></div></section>';
     }
-    h += '<section class="panel"><span class="lbl">Unit</span>' + unitSeg('fUnit', ex ? ex.unit : '', 'form-unit') +
+    h += '<section class="panel"><span class="lbl">Unit</span>' + unitSeg('fUnit', ex ? ex.unit : S.unit, 'form-unit') +
       (isNew ? numField('fWeight', '', 'Starting weight', '', 'fUnitLbl') : '<p class="hint">Only the label changes. Your numbers stay as typed.</p>') + '</section>';
-    if (isNew) {
-      h += '<section class="panel"><span class="lbl">Setup (optional)</span>' +
-        '<div class="field"><label class="lbl" for="fSeat">Seat height</label><input id="fSeat" type="text" maxlength="40" autocapitalize="off" autocorrect="off"></div>' +
-        '<div class="field"><label class="lbl" for="fNotes">Notes</label><textarea id="fNotes" rows="3" maxlength="300"></textarea></div></section>';
-    }
     h += '<p class="msg err" id="fErr" role="alert" hidden></p>';
     h += '<button class="btn save" type="submit" id="fSave">' + (isNew ? 'Save exercise' : 'Save changes') + '</button>';
     if (!isNew) h += '<button type="button" class="link danger" id="delBtn" data-act="del">Delete exercise</button>';
@@ -447,19 +478,19 @@ input.numin { font-size: 30px !important; font-weight: 600 !important; font-vari
   }
 
   function spark(entries) {
-    if (entries.length < 2) return '';
+    if (!entries.length) return '';
     var vals = entries.map(function (e) { return e.w; });
-    var W = 320, H = 88, pad = 14;
+    var W = 320, H = 125, pad = 25;
     var min = Math.min.apply(null, vals), max = Math.max.apply(null, vals), rng = (max - min) || 1;
-    function x(i) { return pad + (W - 2 * pad) * (i / (vals.length - 1)); }
+    function x(i) { return pad + (W - 2 * pad) * (i / Math.max(1,vals.length - 1)); }
     function y(v) { return H - pad - (H - 2 * pad) * ((v - min) / rng); }
     var d = 'M' + x(0).toFixed(1) + ' ' + y(vals[0]).toFixed(1);
-    for (var i = 1; i < vals.length; i++) d += ' H' + x(i).toFixed(1) + ' V' + y(vals[i]).toFixed(1);
+    for (var i = 1; i < vals.length; i++) d += ' L' + x(i).toFixed(1) + ' ' + y(vals[i]).toFixed(1);
     var last = vals.length - 1;
     return '<svg class="spark" viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="Weight over time">' +
       '<line class="base" x1="' + pad + '" x2="' + (W - pad) + '" y1="' + (H - pad) + '" y2="' + (H - pad) + '"/>' +
       '<path class="line" d="' + d + '"/>' +
-      '<circle class="dot" cx="' + x(last).toFixed(1) + '" cy="' + y(vals[last]).toFixed(1) + '" r="5"/></svg>';
+      entries.map(function(e,i){return '<circle class="dot" cx="'+x(i).toFixed(1)+'" cy="'+y(vals[i]).toFixed(1)+'" r="3"/>';}).join('') + '<text x="' + pad + '" y="' + (H-5) + '" fill="#a9b2b7" font-size="10">' + esc(entries[0].d.slice(5)) + '</text><text x="' + (W-pad) + '" y="' + (H-5) + '" text-anchor="end" fill="#a9b2b7" font-size="10">' + esc(entries[last].d.slice(5)) + '</text><text x="4" y="' + (pad+3) + '" fill="#a9b2b7" font-size="10">' + fmt(max) + '</text><text x="4" y="' + (H-pad) + '" fill="#a9b2b7" font-size="10">' + fmt(min) + '</text></svg>';
   }
 
   function viewDetail(ex) {
@@ -470,19 +501,19 @@ input.numin { font-size: 30px !important; font-weight: 600 !important; font-vari
       (ex.entries.length > 1 ? '<button type="button" class="undo" data-act="undo" aria-label="Undo last weight change">' + ICONS.undo + '</button>' : '') + '</div>' +
       '<div class="stat ' + st.cls + '">' + statIcon(st.cls) + (t ? '<span>' + t + '</span>' : '') + '</div></div>';
 
+    h += spark(ex.entries);
     /* setup: seat height + notes, above the chart so it is easy to see */
-    h += '<section class="panel setup-panel"><div class="cardhead"><h3>Setup</h3>' + (ui.setupEdit ? '' : '<button type="button" class="link white" data-act="setup-edit">Edit</button>') + '</div>';
+    h += '<section class="panel setup-panel"><div class="cardhead"><h3>Machine setup</h3>' + (ui.setupEdit ? '<button type="button" class="link" data-act="setup-cancel">Cancel</button>' : '<button type="button" class="link white" data-act="setup-edit">✎ Edit</button>') + '</div>';
     if (ui.setupEdit) {
       h += '<div class="field"><label class="lbl" for="sSeat">Seat height</label><input id="sSeat" type="text" maxlength="40" autocapitalize="off" autocorrect="off" value="' + esc(ex.seat) + '"></div>' +
-        '<div class="field"><label class="lbl" for="sNotes">Notes</label><textarea id="sNotes" rows="3" maxlength="300">' + esc(ex.notes) + '</textarea></div>' +
-        '<div class="stack"><button type="button" class="btn save sm" data-act="setup-save">Save</button><button type="button" class="btn ghost sm" data-act="setup-cancel">Cancel</button></div>';
+        '<div class="field"><label class="lbl" for="sNotes">Notes</label><textarea id="sNotes" rows="2" maxlength="300">' + esc(ex.notes) + '</textarea></div>' +
+        '<button type="button" class="btn save sm" data-act="setup-save">Save changes</button>';
     } else {
       h += '<div class="kv"><span>Seat height</span><b>' + (ex.seat ? esc(ex.seat) : '<span class="dim">Not set</span>') + '</b></div>' +
-        (ex.notes ? '<p class="notes">' + esc(ex.notes) + '</p>' : '<p class="notes dim">No notes</p>');
+        (ex.notes ? '<p class="notes">' + esc(ex.notes) + '</p>' : '');
     }
     h += '</section>';
 
-    h += spark(ex.entries);
 
     if (ui.editing) {
       h += '<div class="panel pop">' + numField('uWeight', fmt(st.cur), 'New weight', ex.unit, '') +
@@ -541,7 +572,7 @@ input.numin { font-size: 30px !important; font-weight: 600 !important; font-vari
   var app = document.getElementById('app');
   function current() {
     var id = location.hash.replace('#', '');
-    if (id === 'new') return { type: 'picker' };
+    if (id === 'new') return { type: 'new', group: 'chest' };
     if (id.indexOf('new/') === 0) {
       var g = ''; try { g = normalizeGroup(decodeURIComponent(id.slice(4))); } catch (err) { g = ''; }
       return g ? { type: 'new', group: g } : { type: 'picker' };
@@ -555,6 +586,7 @@ input.numin { font-size: 30px !important; font-weight: 600 !important; font-vari
     app.className = 'app' + (animate && !reduced() ? ' enter' : '');
     var c = current();
     app.innerHTML = c.type === 'picker' ? viewPicker() : c.type === 'new' ? viewForm(null, c.group) : c.type === 'edit' ? viewForm(c.ex) : c.type === 'settings' ? viewSettings() : c.type === 'detail' ? viewDetail(c.ex) : viewHome();
+    if (c.type === 'home') refreshHomeResults();
     if (c.type === 'detail') {
       if (ui.editing) updatePreview();
       if (ui.roll) { var r = ui.roll; ui.roll = null; rollTo(document.getElementById('bigNum'), r.from, r.to); }
@@ -598,9 +630,8 @@ input.numin { font-size: 30px !important; font-weight: 600 !important; font-vari
   }
   function formErr(msg) { var el = $('fErr'); if (!el) return; el.textContent = msg; el.hidden = !msg; }
   function readForm() {
-    var form = $('exForm'), edit = !!form.getAttribute('data-id'), pick = edit ? pressedOf('gChips', 'data-g') : '', g;
-    if (edit) g = pick === '__custom' ? normalizeGroup($('fCustom').value) : pick;
-    else g = normalizeGroup(form.getAttribute('data-group'));
+    var form = $('exForm'), edit = !!form.getAttribute('data-id'), pick = pressedOf('gChips', 'data-g'), g;
+    g = pick === '__custom' ? normalizeGroup($('fCustom').value) : pick;
     return {
       name: $('fName').value.trim(), brand: $('fBrand').value.trim(),
       group: g, pick: pick, unit: pressedOf('fUnit', 'data-u'),
@@ -613,14 +644,16 @@ input.numin { font-size: 30px !important; font-weight: 600 !important; font-vari
     var form = $('exForm'), id = form.getAttribute('data-id'), f = readForm();
     if (!f.name) { formErr('Enter an exercise name.'); return; }
     if (!f.unit) { formErr('Pick lb or kg.'); return; }
-    if (id && f.pick === '__custom' && !f.group) { formErr('Enter a custom type.'); return; }
+    if (f.pick === '__custom' && !f.group) { formErr('Enter a custom type.'); return; }
     if (!id) {
+      if (!f.group) { formErr('Choose a muscle group.'); return; }
+      S.unit = f.unit;
       if (!validW(f.w)) { formErr('Enter a starting weight, like 72.5.'); return; }
       S.exercises.push({ id: uid(), name: f.name, brand: f.brand, group: f.group, unit: f.unit, seat: f.seat.slice(0, 40), notes: f.notes.slice(0, 300), entries: [{ d: iso(new Date()), w: round2(f.w) }] });
       persist(); location.hash = ''; return;
     }
     var ex = findEx(id); if (!ex) return;
-    ex.name = f.name; ex.brand = f.brand; ex.group = f.group; ex.unit = f.unit;
+    ex.name = f.name; ex.brand = f.brand; ex.group = f.group; ex.unit = f.unit; S.unit = f.unit;
     persist(); location.hash = ex.id;
   }
 
@@ -668,6 +701,7 @@ input.numin { font-size: 30px !important; font-weight: 600 !important; font-vari
 
   document.addEventListener('input', function (e) {
     var t = e.target;
+    if (t.id === 'homeSearch') { ui.search = t.value; refreshHomeResults(); return; }
     if (t.classList && t.classList.contains('numin')) {
       var clean = t.value.replace(/[^0-9.,]/g, '');
       if (clean !== t.value) t.value = clean;
@@ -710,6 +744,11 @@ input.numin { font-size: 30px !important; font-weight: 600 !important; font-vari
     var t = e.target.closest('[data-act]'); if (!t) return;
     var act = t.getAttribute('data-act');
 
+    if (act === 'filter') { ui.filter = t.getAttribute('data-filter'); document.querySelectorAll('.filter-chip').forEach(function(b){b.setAttribute('aria-pressed',String(b.getAttribute('data-filter') === ui.filter));}); refreshHomeResults(); return; }
+    if (act === 'layout') { S.layout = S.layout === 'grid' ? 'list' : 'grid'; persist(); render(false); return; }
+    if (act === 'quick-open') { ui.quick = t.getAttribute('data-id'); ui.quickError = ''; render(false); var qi = $('quickWeight'); if(qi) { qi.focus(); qi.select(); } return; }
+    if (act === 'quick-cancel') { ui.quick = null; render(false); return; }
+    if (act === 'quick-save') { var qe = findEx(ui.quick), qw = $('quickWeight') && parseNum($('quickWeight').value); if (!qe || !validW(qw)) { ui.quickError = 'Enter a valid weight.'; var er = $('quickError'); if(er){er.textContent=ui.quickError;er.hidden=false;} return; } qw=round2(qw); if(qw !== stats(qe).cur){qe.entries.push({d:iso(new Date()),w:qw});persist();} ui.quick=null; render(false); return; }
     if (act === 'hint-dismiss') { S.hintDismissed = true; persist(); render(false); return; }
 
     /* form (new / edit) */
