@@ -3,13 +3,13 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Weight Notes</title>
+<title>Progo</title>
 <meta name="description" content="A bare-bones tracker for the weight you lift on each exercise and how it climbs over time.">
 <meta name="color-scheme" content="dark">
 <meta name="theme-color" content="#0d0f10">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="Weight Notes">
+<meta name="apple-mobile-web-app-title" content="Progo">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" type="image/png" href="icons/icon-192.png">
@@ -190,7 +190,7 @@ input.numin { font-size: 30px !important; font-weight: 600 !important; font-vari
 }
 @media (max-width: 380px) { .bignum { font-size: 84px; } }
 
-/* Weight Notes compact redesign */
+/* Progo compact redesign */
 :root { --bg:#0c0e0f; --surface:#1c2022; --surface2:#24282a; --up:#4ed093; --down:#ff6b60; }
 .app {gap:16px}
 .home-head {display:flex;align-items:center;gap:9px;min-height:48px}
@@ -223,7 +223,7 @@ input.numin { font-size: 30px !important; font-weight: 600 !important; font-vari
 </head>
 <body>
 <div class="app" id="app"></div>
-<noscript><p style="padding:24px">Weight Notes needs JavaScript turned on.</p></noscript>
+<noscript><p style="padding:24px">Progo needs JavaScript turned on.</p></noscript>
 
 <script>
 (function () {
@@ -412,7 +412,7 @@ input.numin { font-size: 30px !important; font-weight: 600 !important; font-vari
   }
 
   function viewHome() {
-    var h = '<div class="home-head"><a class="circle" href="#settings" aria-label="Settings">' + ICONS.sliders + '</a><div class="home-heading"><strong>Weight Notes</strong><small>Your exercise tracker</small></div><button class="circle" type="button" data-act="layout" aria-label="Switch layout">' + (S.layout === 'list' ? '▦' : '☷') + '</button><a class="circle" href="#new" aria-label="Add exercise">' + ICONS.plus + '</a></div>';
+    var h = '<div class="home-head"><a class="circle" href="#settings" aria-label="Settings">' + ICONS.sliders + '</a><div class="home-heading"><strong>Progo</strong><small>Your exercise tracker</small></div><button class="circle" type="button" data-act="layout" aria-label="Switch layout">' + (S.layout === 'list' ? '▦' : '☷') + '</button><a class="circle" href="#new" aria-label="Add exercise">' + ICONS.plus + '</a></div>';
     h += '<input id="homeSearch" class="home-search" type="search" placeholder="Search exercises..." aria-label="Search exercises" value="' + esc(ui.search) + '">';
     h += '<div class="filter-row" role="group" aria-label="Muscle group filters">' + ['All'].concat(GROUPS.map(function(g){return g[1];}),['Custom']).map(function(g){return '<button type="button" class="filter-chip" data-act="filter" data-filter="' + g + '" aria-pressed="' + (ui.filter === g) + '">' + g + '</button>';}).join('') + '</div>';
     h += '<div id="homeResults"></div>';
@@ -564,7 +564,7 @@ input.numin { font-size: 30px !important; font-weight: 600 !important; font-vari
     } else {
       h += '<button type="button" class="btn ghost sm" data-act="wipe">Delete all exercises</button>';
     }
-    h += '</section><p class="hint center">Weight Notes · no account, no cloud. Data stays on this device.</p>';
+    h += '</section><p class="hint center">Progo · no account, no cloud. Data stays on this device.</p>';
     return h;
   }
 
@@ -683,7 +683,7 @@ input.numin { font-size: 30px !important; font-weight: 600 !important; font-vari
     }
 
     if (file && navigator.canShare && navigator.canShare({ files: [file] }) && navigator.share) {
-      navigator.share({ files: [file], title: 'Weight Notes backup' }).then(function () {
+      navigator.share({ files: [file], title: 'Progo backup' }).then(function () {
         markBackup(); ui.msg = { t: 'ok', s: 'Backup shared. Save it to Files or send it to yourself.' }; render(false);
       }).catch(function (err) {
         if (err && err.name === 'AbortError') return;
@@ -732,7 +732,7 @@ input.numin { font-size: 30px !important; font-weight: 600 !important; font-vari
       var clean = null;
       try { clean = sanitizeBackup(JSON.parse(rd.result)); } catch (err) { clean = null; }
       if (clean) { ui.pending = clean; ui.msg = null; }
-      else { ui.pending = null; ui.msg = { t: 'err', s: 'That file isn’t a Weight Notes backup.' }; }
+      else { ui.pending = null; ui.msg = { t: 'err', s: 'That file isn’t a Progo backup.' }; }
       render(false);
     };
     rd.onerror = function () { ui.msg = { t: 'err', s: 'Couldn’t read that file.' }; render(false); };

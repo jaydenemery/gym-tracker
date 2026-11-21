@@ -1,4 +1,4 @@
-# Weight Notes
+# Progo
 
 A tiny offline app for writing down the weight you use on each gym machine. No reps, no accounts, no backend. Everything stays on your phone. About 40 KB.
 
