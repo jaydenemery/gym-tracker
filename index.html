@@ -16,22 +16,20 @@
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 <style>
 /* Layout: dark rounded cards in two columns, grouped under muscle-group headings.
-   Each card shows the weight and a vertical freshness gauge. Detail screens stack panels. */
+   Detail screens stack panels: name and weight, setup, chart, update, history. */
 :root {
   --bg: #0d0f10;
   --surface: #181b1e;
   --surface2: #212528;
-  --line: rgba(255, 255, 255, .07);
-  --ink: #f3f5f4;
-  --muted: #9aa4a9;
-  --faint: #5f6a70;
+  --line: rgba(255, 255, 255, .08);
+  --ink: #ffffff;
+  --muted: #a9b2b7;
   --accent: #ff5d52;
   --on-accent: #1a0f0e;
   --up: #4fd18b;
+  --on-up: #05230f;
   --down: #e8a74b;
-  --s1: #e8c64a;
-  --s2: #f4903f;
-  --s3: #ff6b60;
+  --danger: #ff6b60;
   --font: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'SF Pro Display', system-ui, 'Segoe UI', Roboto, sans-serif;
   --ease: cubic-bezier(.2, .8, .2, 1);
   color-scheme: dark;
@@ -74,45 +72,35 @@ h1, h2, h3, p { margin: 0; }
 .grp { display: flex; flex-direction: column; gap: 10px; }
 .grp h2 { font-size: 18px; font-weight: 600; letter-spacing: -.01em; }
 .grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
-.card { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 10px; align-items: center; min-height: 132px; padding: 14px 12px 14px 16px; background: linear-gradient(180deg, #1c2023, var(--surface)); border: 1px solid var(--line); border-radius: 22px; }
-.cname { font-size: 15px; font-weight: 600; color: var(--muted); line-height: 1.2; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; overflow-wrap: anywhere; }
-.cbrand { font-size: 12px; color: var(--faint); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 2px; }
-.cval { font-size: clamp(28px, 9vw, 36px); font-weight: 700; letter-spacing: -.02em; line-height: 1.05; font-variant-numeric: tabular-nums; margin-top: 8px; white-space: nowrap; }
-.cval small { font-size: 14px; font-weight: 600; color: var(--muted); margin-left: 4px; letter-spacing: 0; }
-.cstat { display: flex; align-items: center; gap: 6px; margin-top: 6px; font-size: 15px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.card { display: flex; flex-direction: column; justify-content: center; min-height: 124px; padding: 16px; background: linear-gradient(180deg, #1c2023, var(--surface)); border: 1px solid var(--line); border-radius: 22px; }
+.cname { font-size: 17px; font-weight: 600; color: var(--ink); line-height: 1.2; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; overflow-wrap: anywhere; }
+.cbrand { font-size: 13px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 2px; }
+.cval { font-size: clamp(30px, 9.5vw, 38px); font-weight: 700; letter-spacing: -.02em; line-height: 1.05; font-variant-numeric: tabular-nums; margin-top: 8px; white-space: nowrap; }
+.cval small { font-size: 15px; font-weight: 600; color: var(--muted); margin-left: 4px; letter-spacing: 0; }
+.cstat { display: flex; align-items: center; gap: 6px; margin-top: 6px; font-size: 16px; font-weight: 600; font-variant-numeric: tabular-nums; min-height: 18px; }
 .cstat.up, .stat.up { color: var(--up); }
 .cstat.down, .stat.down { color: var(--down); }
 .cstat.flat, .stat.flat { color: var(--muted); }
 .sti { width: 16px; height: 16px; flex: none; }
-.addcard { display: flex; align-items: center; justify-content: center; min-height: 56px; border: 1.5px dashed rgba(255, 255, 255, .16); border-radius: 22px; color: var(--muted); font-weight: 600; }
-
-/* freshness gauge */
-.gauge { --gc: var(--up); --p: .5; position: relative; width: 18px; height: 86px; border-radius: 9px; background: rgba(255, 255, 255, .07); flex: none; }
-.gauge.s1 { --gc: var(--s1); }
-.gauge.s2 { --gc: var(--s2); }
-.gauge.s3 { --gc: var(--s3); }
-.gfill { position: absolute; left: 3px; right: 3px; bottom: 3px; height: calc((100% - 6px) * var(--p)); border-radius: 6px; background: var(--gc); opacity: .85; animation: gh .8s var(--ease) backwards; }
-.gdot { position: absolute; left: 50%; width: 12px; height: 12px; margin-left: -6px; bottom: calc(3px + (100% - 6px) * var(--p) - 6px); border-radius: 50%; background: var(--bg); border: 2.5px solid var(--gc); box-shadow: 0 0 8px var(--gc); animation: gd .8s var(--ease) backwards; }
-@keyframes gh { from { height: 0; } }
-@keyframes gd { from { bottom: -6px; } }
 
 /* shared bits */
 .hint { color: var(--muted); font-size: 14px; }
 .hint.center { text-align: center; }
 .msg { font-size: 15px; font-weight: 500; }
 .msg.ok { color: var(--up); }
-.msg.err { color: var(--s3); }
-.empty { text-align: center; color: var(--muted); padding: 40px 8px 8px; }
+.msg.err { color: var(--danger); }
+.empty { text-align: center; color: var(--muted); padding: 48px 8px; font-size: 17px; }
 .note { display: flex; justify-content: space-between; align-items: center; gap: 12px; color: var(--muted); font-size: 14px; }
 .link { background: none; border: 0; color: var(--muted); min-height: 44px; padding: 0 4px; font-size: 15px; text-decoration: underline; text-underline-offset: 3px; }
-.link:disabled { opacity: .35; cursor: default; text-decoration: none; }
+.link.white { color: var(--ink); font-size: 17px; font-weight: 500; }
+.link.danger { color: var(--danger); font-size: 17px; font-weight: 600; text-decoration: none; min-height: 48px; }
 .btn { display: flex; align-items: center; justify-content: center; width: 100%; min-height: 54px; border-radius: 16px; border: 1px solid transparent; font-weight: 600; font-size: 17px; }
 .btn.primary { background: var(--accent); color: var(--on-accent); }
 .btn.primary:disabled { opacity: .4; cursor: default; }
+.btn.save { background: var(--up); color: var(--on-up); }
 .btn.ghost { background: var(--surface2); border-color: var(--line); color: var(--ink); }
 .btn.sm { min-height: 46px; font-size: 15px; }
-.btn.danger { background: var(--accent); color: var(--on-accent); }
-.btn.big { min-height: 68px; font-size: 22px; background: var(--surface); border-color: var(--line); color: var(--ink); }
+.btn.danger { background: var(--danger); color: var(--on-accent); }
 .stack { display: flex; flex-direction: column; gap: 10px; }
 .stack-lg { display: flex; flex-direction: column; gap: 14px; }
 .panel { background: var(--surface); border: 1px solid var(--line); border-radius: 22px; padding: 16px; display: flex; flex-direction: column; gap: 14px; }
@@ -122,72 +110,71 @@ h1, h2, h3, p { margin: 0; }
 .field input, .field textarea { width: 100%; min-width: 0; min-height: 52px; padding: 0 14px; background: var(--surface2); border: 1px solid var(--line); border-radius: 14px; color: var(--ink); font-size: 17px; font-weight: 500; outline: none; -webkit-appearance: none; appearance: none; caret-color: var(--accent); }
 .field textarea { padding: 13px 14px; resize: none; line-height: 1.35; }
 .field input:focus, .field textarea:focus { border-color: rgba(255, 255, 255, .3); }
-.field input::placeholder, .field textarea::placeholder { color: var(--faint); }
-.field input[type="date"] { min-height: 52px; }
 .wrow { display: flex; align-items: center; gap: 10px; }
 .wrow .unit { font-size: 20px; font-weight: 600; color: var(--muted); min-width: 28px; }
 input.numin { font-size: 30px !important; font-weight: 600 !important; font-variant-numeric: tabular-nums; }
 .seg { display: flex; background: var(--surface2); border-radius: 14px; padding: 3px; gap: 3px; }
-.seg button { flex: 1; min-height: 42px; border: 0; border-radius: 11px; background: transparent; color: var(--muted); font-weight: 600; font-size: 16px; }
+.seg button { flex: 1; min-height: 44px; border: 0; border-radius: 11px; background: transparent; color: var(--muted); font-weight: 600; font-size: 17px; }
 .seg button[aria-pressed="true"] { background: var(--ink); color: var(--bg); }
 .gchips { display: flex; flex-wrap: wrap; gap: 8px; }
-.gchip { min-height: 40px; padding: 0 16px; border-radius: 20px; border: 1px solid var(--line); background: var(--surface2); color: var(--muted); font-weight: 600; font-size: 15px; }
+.gchip { min-height: 42px; padding: 0 16px; border-radius: 21px; border: 1px solid var(--line); background: var(--surface2); color: var(--muted); font-weight: 600; font-size: 15px; }
 .gchip[aria-pressed="true"] { background: var(--ink); color: var(--bg); border-color: var(--ink); }
-.confirm-block { display: flex; flex-direction: column; gap: 12px; padding-top: 12px; border-top: 1px solid var(--line); }
-.confirm-block p { font-size: 15px; }
 
-/* first run */
-.setup { display: flex; flex-direction: column; gap: 14px; padding-top: 10vh; }
-.setup h1 { font-size: 30px; line-height: 1.12; font-weight: 700; letter-spacing: -.02em; }
-.setup .brand { font-size: 15px; font-weight: 600; color: var(--muted); letter-spacing: .08em; text-transform: uppercase; }
+/* type picker */
+[hidden] { display: none !important; }
+.page-title { font-size: 28px; font-weight: 700; letter-spacing: -.02em; line-height: 1.12; }
+.typegrid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.typebtn { display: flex; align-items: center; justify-content: center; min-height: 80px; padding: 0 12px; background: linear-gradient(180deg, #1c2023, var(--surface)); border: 1px solid var(--line); border-radius: 22px; color: var(--ink); font-size: 20px; font-weight: 600; text-align: center; }
+.typebtn.custom { background: transparent; border: 1.5px dashed rgba(255, 255, 255, .24); }
+.gpill { display: inline-flex; align-items: center; gap: 10px; align-self: flex-start; min-height: 40px; padding: 0 8px 0 16px; border-radius: 20px; background: var(--surface2); border: 1px solid var(--line); font-size: 16px; }
+.gpill b { font-weight: 600; }
+.gpill span { color: var(--muted); font-size: 14px; padding-right: 8px; }
+.typebtn, .gpill { transition: transform .16s var(--ease), background-color .16s ease; }
+.typebtn:active, .gpill:active { transform: scale(.97); }
 
 /* detail */
 .hero { display: flex; flex-direction: column; gap: 4px; }
-.eyebrow { font-size: 13px; color: var(--muted); text-transform: uppercase; letter-spacing: .08em; font-weight: 600; }
 .hero h1 { font-size: 28px; line-height: 1.12; font-weight: 700; letter-spacing: -.02em; overflow-wrap: anywhere; }
-.hero .brand-line { color: var(--muted); }
-.bignum { font-size: 96px; font-weight: 700; line-height: .95; letter-spacing: -.04em; font-variant-numeric: tabular-nums; margin-top: 10px; white-space: nowrap; }
+.hero .brand-line { color: var(--muted); font-size: 17px; }
+.bigrow { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; margin-top: 8px; }
+.bignum { font-size: 96px; font-weight: 700; line-height: .95; letter-spacing: -.04em; font-variant-numeric: tabular-nums; white-space: nowrap; min-width: 0; }
 .bignum small { font-size: 26px; font-weight: 600; color: var(--muted); margin-left: 6px; letter-spacing: 0; }
-.change { display: flex; flex-direction: column; gap: 6px; margin-top: 8px; }
-.stat { display: flex; align-items: center; gap: 8px; font-size: 20px; font-weight: 600; font-variant-numeric: tabular-nums; }
-.stat .sti { width: 20px; height: 20px; }
-.stat .since { font-size: 14px; font-weight: 500; color: var(--muted); }
-.fresh { --gc: var(--up); display: flex; align-items: center; gap: 8px; font-size: 14px; color: var(--gc); font-weight: 500; }
-.fresh.s1 { --gc: var(--s1); }
-.fresh.s2 { --gc: var(--s2); }
-.fresh.s3 { --gc: var(--s3); }
-.fresh i { width: 8px; height: 8px; border-radius: 50%; background: var(--gc); }
+.undo { flex: none; width: 52px; height: 52px; border-radius: 50%; background: var(--surface2); border: 1px solid rgba(255, 255, 255, .16); color: var(--ink); display: grid; place-items: center; padding: 0; margin-bottom: 6px; }
+.undo svg { width: 26px; height: 26px; }
+.stat { display: flex; align-items: center; gap: 8px; margin-top: 6px; font-size: 22px; font-weight: 600; font-variant-numeric: tabular-nums; min-height: 24px; }
+.stat .sti { width: 22px; height: 22px; }
 .spark { width: 100%; height: auto; display: block; background: var(--surface); border: 1px solid var(--line); border-radius: 22px; }
 .spark .line { fill: none; stroke: var(--ink); stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
 .spark .base { stroke: var(--line); stroke-width: 1; stroke-dasharray: 3 4; }
 .spark .dot { fill: var(--accent); }
-.chips { display: flex; flex-direction: column; gap: 8px; }
-.chip-row { display: flex; gap: 8px; }
-.chip { flex: 1 1 0; min-width: 0; min-height: 46px; padding: 0 6px; background: var(--surface2); border: 1px solid var(--line); border-radius: 14px; font-size: 19px; font-weight: 600; font-variant-numeric: tabular-nums; }
-.pvrow { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
-.preview { font-size: 19px; font-weight: 500; color: var(--muted); font-variant-numeric: tabular-nums; min-height: 26px; }
-.preview b { color: var(--ink); font-weight: 700; }
-.cardhead { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: -8px 0 -6px; }
-.kv { display: flex; justify-content: space-between; gap: 12px; align-items: baseline; }
-.kv span { color: var(--muted); }
-.kv b { font-weight: 600; text-align: right; overflow-wrap: anywhere; }
-.notes { white-space: pre-wrap; overflow-wrap: anywhere; color: var(--ink); }
-.dim { color: var(--faint); }
+
+/* setup card: seat height and notes, big and white */
+.setup-panel { gap: 12px; }
+.setup-panel .cardhead { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: -6px 0 0; }
+.setup-panel h3 { font-size: 18px; font-weight: 700; color: var(--ink); text-transform: none; letter-spacing: 0; }
+.setup-panel .lbl { font-size: 15px; font-weight: 600; color: var(--ink); text-transform: none; letter-spacing: 0; }
+.kv { display: flex; justify-content: space-between; gap: 12px; align-items: baseline; font-size: 19px; }
+.kv span { color: var(--ink); }
+.kv b { font-weight: 700; text-align: right; overflow-wrap: anywhere; color: var(--ink); }
+.notes { white-space: pre-wrap; overflow-wrap: anywhere; color: var(--ink); font-size: 18px; line-height: 1.4; }
+.dim { color: var(--muted); font-weight: 500; }
+
+/* history */
 .history h2 { margin: 0 0 8px; font-size: 13px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
 .hlist { list-style: none; margin: 0; padding: 0; background: var(--surface); border: 1px solid var(--line); border-radius: 22px; overflow: hidden; }
 .hlist li { border-top: 1px solid var(--line); }
 .hlist li:first-child { border-top: 0; }
-.hrow { display: grid; grid-template-columns: 1fr auto auto; gap: 14px; align-items: baseline; width: 100%; padding: 13px 16px; background: transparent; border: 0; text-align: left; }
-.hrow .d { color: var(--muted); }
-.hrow .hw { font-size: 22px; font-weight: 700; font-variant-numeric: tabular-nums; }
-.hrow .hd { font-size: 17px; font-weight: 600; min-width: 52px; text-align: right; font-variant-numeric: tabular-nums; }
+.hrow { display: grid; grid-template-columns: 52px minmax(0, 1fr) auto; gap: 10px; align-items: baseline; width: 100%; padding: 13px 16px; background: transparent; border: 0; text-align: left; }
+.hrow .d { color: var(--muted); font-size: 16px; font-variant-numeric: tabular-nums; }
+.hrow .hw { font-size: 20px; font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.hrow .hw small { font-size: 14px; font-weight: 600; color: var(--muted); margin-left: 3px; }
+.hrow .hd { font-size: 16px; font-weight: 600; text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
 .hd.up { color: var(--up); } .hd.down { color: var(--down); } .hd.flat { color: var(--muted); }
 .hedit { padding: 14px 16px; display: flex; flex-direction: column; gap: 12px; }
-.foot { display: flex; justify-content: center; }
 
 /* motion */
-.card, .btn, .chip, .gchip, .circle, .seg button, .hrow, .addcard { transition: transform .16s var(--ease), background-color .16s ease, opacity .16s ease; }
-.card:active, .btn:active, .chip:active, .gchip:active, .circle:active, .addcard:active { transform: scale(.97); }
+.card, .btn, .circle, .undo, .gchip, .seg button, .hrow { transition: transform .16s var(--ease), background-color .16s ease, opacity .16s ease; }
+.card:active, .btn:active, .circle:active, .undo:active, .gchip:active { transform: scale(.97); }
 .seg button:active, .hrow:active { background: rgba(255, 255, 255, .06); }
 @keyframes enter { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
 @keyframes pop { from { opacity: 0; transform: translateY(8px) scale(.985); } to { opacity: 1; transform: none; } }
@@ -201,7 +188,7 @@ input.numin { font-size: 30px !important; font-weight: 600 !important; font-vari
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; }
 }
-@media (max-width: 380px) { .bignum { font-size: 84px; } .gauge { width: 16px; } }
+@media (max-width: 380px) { .bignum { font-size: 84px; } }
 </style>
 </head>
 <body>
@@ -212,28 +199,24 @@ input.numin { font-size: 30px !important; font-weight: 600 !important; font-vari
 (function () {
   'use strict';
 
-  var KEY = 'weight-notes-v1'; // same key as version 1 so existing data carries over
+  var KEY = 'weight-notes-v1'; // same key as earlier versions so existing data carries over
   var storageOK = true;
 
-  var GROUPS = [['chest', 'Chest'], ['back', 'Back'], ['shoulders', 'Shoulders'], ['arms', 'Arms'], ['legs', 'Legs'], ['core', 'Core'], ['other', 'Other']];
+  /* The user picks the type by hand when adding an exercise. A type is one of these keys, or a custom name they typed. */
+  var GROUPS = [['chest', 'Chest'], ['back', 'Back'], ['shoulder', 'Shoulder'], ['tricep', 'Tricep'], ['bicep', 'Bicep'], ['legs', 'Legs'], ['core', 'Core']];
   var GNAME = {}; GROUPS.forEach(function (g) { GNAME[g[0]] = g[1]; });
-
-  /* Keyword rules, checked in order. They look at the exercise name only. */
-  var RULES = [
-    ['chest', /chest dip/],
-    ['core', /\b(crunch(es)?|abs?|abdominals?|plank|obliques?|sit.?ups?|leg raises?|knee raises?|woodchop(per)?s?|torso rotation|core)\b/],
-    ['legs', /(\bleg\b|\blegs\b|squat|lunge|calf|calves|hamstring|quad|glute|hip thrust|hip abduct|hip adduct|adductor|abductor|\bhack\b|thigh|romanian|\brdl\b|step.?up)/],
-    ['arms', /(curl|bicep|tricep|pushdown|push down|skull|preacher|forearm|wrist|kickback|\bdips?\b)/],
-    ['shoulders', /(shoulder|overhead|\bohp\b|military|lateral raise|side raise|front raise|rear delt|reverse fly|reverse pec|arnold|upright row|face pull|shrug|\bdelts?\b)/],
-    ['back', /(\brows?\b|rowing|\blats?\b|pulldown|pull down|pull.?ups?|chin.?ups?|deadlift|\bback\b|rack pull|pullover|t-bar|good morning)/],
-    ['chest', /(chest|bench|\bpecs?\b|pec deck|\bfl(y|ye|yes|ies)\b|push.?ups?|incline|decline|cable cross|crossover)/]
-  ];
-  function classify(name) {
-    var n = String(name || '').toLowerCase();
-    if (!n.trim()) return null;
-    for (var i = 0; i < RULES.length; i++) if (RULES[i][1].test(n)) return RULES[i][0];
-    return null;
+  var LEGACY = { shoulders: 'shoulder', triceps: 'tricep', biceps: 'bicep', leg: 'legs', abs: 'core', abdominals: 'core' };
+  var CUSTOM_MAX = 24;
+  function normalizeGroup(g) {
+    g = String(g == null ? '' : g).replace(/\s+/g, ' ').trim().slice(0, CUSTOM_MAX).trim();
+    if (!g) return '';
+    var k = g.toLowerCase();
+    if (GNAME[k]) return k;
+    if (LEGACY[k]) return LEGACY[k];
+    for (var i = 0; i < GROUPS.length; i++) if (GROUPS[i][1].toLowerCase() === k) return GROUPS[i][0];
+    return g;
   }
+  function groupLabel(g) { return GNAME[g] || g; }
 
   /* ---------- helpers ---------- */
   function iso(d) { return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
@@ -249,18 +232,17 @@ input.numin { font-size: 30px !important; font-weight: 600 !important; font-vari
   function validW(w) { return isFinite(w) && w > 0 && w < 10000; }
   function sign(v) { return v > 0 ? '+' : v < 0 ? '−' : ''; }
   function esc(s) { return String(s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
-  function dateLabel(s) {
-    var p = s.split('-'); var d = new Date(+p[0], +p[1] - 1, +p[2]);
-    var o = { month: 'short', day: 'numeric' };
-    if (d.getFullYear() !== new Date().getFullYear()) o.year = 'numeric';
-    return d.toLocaleDateString(undefined, o);
-  }
   function reduced() { return window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches; }
+  function daysSince(s) {
+    var p = s.split('-'); var d = new Date(+p[0], +p[1] - 1, +p[2]);
+    var t = new Date(); t.setHours(0, 0, 0, 0);
+    return Math.round((t - d) / 86400000);
+  }
+  function daysLabel(s) { var n = daysSince(s); return n <= 0 ? 'Today' : n + 'd'; }
 
   /* ---------- haptics ---------- */
   function isIOS() { return /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1); }
   function haptic() {
-    if (S && S.haptics === false) return;
     try {
       if (isIOS()) {
         /* Unofficial iOS trick: toggling a hidden switch checkbox from a tap gives a light tick. */
@@ -275,7 +257,17 @@ input.numin { font-size: 30px !important; font-weight: 600 !important; font-vari
   }
 
   /* ---------- data ---------- */
-  function sanitizeExercises(list, defUnit) {
+  /* Data saved before version 4 is migrated, never discarded: shoulders -> shoulder, arms -> a custom "Arms" type,
+     other or no type -> "Needs a group" until the user picks one. Nothing is guessed from the name. */
+  function migrateGroup(g, legacy) {
+    if (typeof g !== 'string') return '';
+    var k = g.trim().toLowerCase();
+    if (legacy && k === 'other') return '';
+    if (legacy && k === 'arms') return 'Arms';
+    return normalizeGroup(g);
+  }
+
+  function sanitizeExercises(list, fallbackUnit, legacy) {
     var out = [], seen = {};
     if (!Array.isArray(list)) return out;
     list.slice(0, 500).forEach(function (e) {
@@ -295,8 +287,8 @@ input.numin { font-size: 30px !important; font-weight: 600 !important; font-vari
       out.push({
         id: id, name: name,
         brand: String(e.brand == null ? '' : e.brand).trim().slice(0, 60),
-        group: GNAME[e.group] ? e.group : (classify(name) || 'other'),
-        unit: e.unit === 'kg' || e.unit === 'lb' ? e.unit : defUnit,
+        group: migrateGroup(e.group, legacy),
+        unit: e.unit === 'kg' || e.unit === 'lb' ? e.unit : fallbackUnit,
         seat: String(e.seat == null ? '' : e.seat).trim().slice(0, 40),
         notes: String(e.notes == null ? '' : e.notes).trim().slice(0, 300),
         entries: entries
@@ -305,13 +297,13 @@ input.numin { font-size: 30px !important; font-weight: 600 !important; font-vari
     return out;
   }
 
+  function fallbackOf(o) { var u = o && (o.defaultUnit || o.unit); return u === 'kg' || u === 'lb' ? u : 'lb'; }
+
   function sanitizeBackup(o) {
     if (!o || o.app !== 'weight-notes' || !Array.isArray(o.exercises)) return null;
-    var u = o.defaultUnit || o.unit;
-    if (u !== 'lb' && u !== 'kg') return null;
-    var ex = sanitizeExercises(o.exercises, u);
+    var ex = sanitizeExercises(o.exercises, fallbackOf(o), !(Number(o.version) >= 4));
     if (o.exercises.length > 0 && ex.length === 0) return null;
-    return { defaultUnit: u, exercises: ex };
+    return { exercises: ex };
   }
 
   function load() {
@@ -319,55 +311,28 @@ input.numin { font-size: 30px !important; font-weight: 600 !important; font-vari
     try { localStorage.setItem('__wn', '1'); localStorage.removeItem('__wn'); } catch (e) { storageOK = false; }
     try { var r = localStorage.getItem(KEY); if (r) s = JSON.parse(r); } catch (e) { s = null; }
     if (!s || typeof s !== 'object') s = {};
-    var du = s.defaultUnit === 'kg' || s.defaultUnit === 'lb' ? s.defaultUnit : (s.unit === 'kg' || s.unit === 'lb' ? s.unit : null);
-    return {
-      defaultUnit: du,
-      exercises: sanitizeExercises(s.exercises, du || 'lb'),
-      lastBackup: +s.lastBackup || 0,
-      hintDismissed: !!s.hintDismissed,
-      haptics: s.haptics !== false
-    };
+    return { exercises: sanitizeExercises(s.exercises, fallbackOf(s), !(Number(s.v) >= 4)), lastBackup: +s.lastBackup || 0, hintDismissed: !!s.hintDismissed };
   }
 
   var S = load();
   function persist() {
     try {
-      localStorage.setItem(KEY, JSON.stringify({ v: 2, defaultUnit: S.defaultUnit, exercises: S.exercises, lastBackup: S.lastBackup, hintDismissed: S.hintDismissed, haptics: S.haptics }));
+      localStorage.setItem(KEY, JSON.stringify({ v: 4, exercises: S.exercises, lastBackup: S.lastBackup, hintDismissed: S.hintDismissed }));
       storageOK = true;
     } catch (e) { storageOK = false; }
   }
+  persist(); // writes migrated groups back so they are stable
 
   var ui = {};
-  function resetUi() { ui = { editing: false, stack: [], pending: null, confirmWipe: false, msg: null, setupEdit: false, hist: -1, form: null, roll: null }; }
+  function resetUi() { ui = { customOpen: false, editing: false, pending: null, confirmWipe: false, msg: null, setupEdit: false, hist: -1, form: null, roll: null, delArmed: false }; }
   resetUi();
-
-  /* Days without a weight change before the gauge changes color: yellow, orange, red. */
-  var STALE_DAYS = [28, 56, 84];
-  function daysSince(s) {
-    var p = s.split('-'); var d = new Date(+p[0], +p[1] - 1, +p[2]);
-    var t = new Date(); t.setHours(0, 0, 0, 0);
-    return Math.round((t - d) / 86400000);
-  }
-  function age(ex) { return daysSince(ex.entries[ex.entries.length - 1].d); }
-  function staleLevel(n) { return n >= STALE_DAYS[2] ? 3 : n >= STALE_DAYS[1] ? 2 : n >= STALE_DAYS[0] ? 1 : 0; }
-  function freshness(n) { return Math.max(.1, Math.min(1, 1 - n / STALE_DAYS[2])); }
-  function ago(n) {
-    if (n <= 0) return 'today';
-    if (n === 1) return 'yesterday';
-    if (n < 14) return n + ' days ago';
-    if (n < 60) return Math.floor(n / 7) + ' weeks ago';
-    return Math.floor(n / 30) + ' months ago';
-  }
 
   function stats(ex) {
     var first = ex.entries[0].w, cur = ex.entries[ex.entries.length - 1].w;
     var delta = round2(cur - first);
-    return { first: first, cur: cur, delta: delta, cls: delta > 0 ? 'up' : delta < 0 ? 'down' : 'flat', since: ex.entries[0].d };
+    return { first: first, cur: cur, delta: delta, cls: delta > 0 ? 'up' : delta < 0 ? 'down' : 'flat' };
   }
-  function deltaText(st, unit) {
-    if (st.delta === 0) return 'Starting weight';
-    return sign(st.delta) + fmt(Math.abs(st.delta)) + ' ' + unit;
-  }
+  function deltaText(st, unit) { return st.delta === 0 ? '' : sign(st.delta) + fmt(Math.abs(st.delta)) + ' ' + unit; }
   function sortEntries(ex) {
     ex.entries = ex.entries.map(function (e, i) { return { e: e, i: i }; }).sort(function (a, b) {
       return a.e.d < b.e.d ? -1 : a.e.d > b.e.d ? 1 : a.i - b.i;
@@ -381,7 +346,8 @@ input.numin { font-size: 30px !important; font-weight: 600 !important; font-vari
     sliders: SVG + '<path d="M4 7h10M18 7h2M4 17h2M10 17h10"/><circle cx="16" cy="7" r="2"/><circle cx="8" cy="17" r="2"/></svg>',
     plus: SVG + '<path d="M12 5v14M5 12h14"/></svg>',
     back: SVG + '<path d="M15 5l-7 7 7 7"/></svg>',
-    edit: SVG + '<path d="M12 20h8"/><path d="M16.5 3.5l4 4L8 20l-5 1 1-5z"/></svg>'
+    edit: SVG + '<path d="M12 20h8"/><path d="M16.5 3.5l4 4L8 20l-5 1 1-5z"/></svg>',
+    undo: SVG.replace('stroke-width="2"', 'stroke-width="2.2"') + '<path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>'
   };
   function circle(href, icon, label) { return '<a class="circle" href="' + href + '" aria-label="' + label + '">' + ICONS[icon] + '</a>'; }
   function blank() { return '<span class="circle blank" aria-hidden="true"></span>'; }
@@ -404,35 +370,31 @@ input.numin { font-size: 30px !important; font-weight: 600 !important; font-vari
     }).join('') + '</div>';
   }
 
-  function viewSetup() {
-    return '<div class="setup"><div class="brand">Weight Notes</div>' +
-      '<h1>Which unit do you usually lift in?</h1>' +
-      '<p class="hint">New exercises start with this unit. Each exercise keeps its own unit, so you can mix kg and lb machines.</p>' +
-      '<div class="stack"><button type="button" class="btn big" data-act="setup-unit" data-u="lb">Pounds (lb)</button>' +
-      '<button type="button" class="btn big" data-act="setup-unit" data-u="kg">Kilograms (kg)</button></div></div>';
-  }
-
   function cardHtml(ex) {
-    var st = stats(ex), n = age(ex), lvl = staleLevel(n), p = freshness(n).toFixed(3);
-    return '<a class="card" href="#' + ex.id + '"><div><div class="cname">' + esc(ex.name) + '</div>' +
+    var st = stats(ex), t = deltaText(st, ex.unit);
+    return '<a class="card" href="#' + ex.id + '"><div class="cname">' + esc(ex.name) + '</div>' +
       (ex.brand ? '<div class="cbrand">' + esc(ex.brand) + '</div>' : '') +
       '<div class="cval">' + fmt(st.cur) + '<small>' + ex.unit + '</small></div>' +
-      '<div class="cstat ' + st.cls + '">' + statIcon(st.cls) + '<span>' + deltaText(st, ex.unit) + '</span></div></div>' +
-      '<div class="gauge s' + lvl + '" style="--p:' + p + '" role="img" aria-label="Updated ' + ago(n) + '"><span class="gfill"></span><span class="gdot"></span></div></a>';
+      '<div class="cstat ' + st.cls + '">' + statIcon(st.cls) + (t ? '<span>' + t + '</span>' : '') + '</div></a>';
   }
 
   function viewHome() {
     var h = '<div class="top">' + circle('#settings', 'sliders', 'Settings') + '<span class="title">Weight Notes</span>' + circle('#new', 'plus', 'Add exercise') + '</div>';
     if (!S.exercises.length) {
-      h += '<div class="empty">Nothing here yet.<br>Add the first exercise you train.</div><a class="btn primary" href="#new">Add exercise</a>';
+      h += '<div class="empty">Nothing here yet.<br>Tap + to add your first exercise.</div>';
     } else {
-      GROUPS.forEach(function (g) {
-        var list = S.exercises.filter(function (e) { return e.group === g[0]; });
-        if (!list.length) return;
-        h += '<section class="grp"><h2>' + g[1] + '</h2><div class="grid">' + list.map(cardHtml).join('') + '</div></section>';
+      var buckets = {}, custom = [];
+      S.exercises.forEach(function (e) {
+        var k = !e.group ? '' : GNAME[e.group] ? e.group : 'c:' + e.group.toLowerCase();
+        if (!buckets[k]) { buckets[k] = []; if (k.indexOf('c:') === 0) custom.push(k); }
+        buckets[k].push(e);
       });
-      h += '<a class="addcard" href="#new">Add exercise</a>';
-      h += '<p class="hint center">The bar on each card shows how recently you updated that weight. It drains over 12 weeks.</p>';
+      function section(title, list) { return '<section class="grp"><h2>' + esc(title) + '</h2><div class="grid">' + list.map(cardHtml).join('') + '</div></section>'; }
+      GROUPS.forEach(function (g) { if (buckets[g[0]]) h += section(g[1], buckets[g[0]]); });
+      custom.forEach(function (k) { h += section(buckets[k][0].group, buckets[k]); });
+      if (buckets['']) {
+        h += '<section class="grp" id="needsGroup"><h2>Needs a group</h2><p class="hint">Open an exercise, tap the pencil, and pick a type.</p><div class="grid">' + buckets[''].map(cardHtml).join('') + '</div></section>';
+      }
     }
     if (!storageOK) h += '<p class="msg err">This browser can’t save data (private browsing?). Export a backup in Settings before you close the app.</p>';
     if (showInstallHint()) h += '<div class="note"><span>Install it first: Share, then Add to Home Screen. The installed app keeps its own data, separate from Safari.</span><button type="button" class="link" data-act="hint-dismiss">Got it</button></div>';
@@ -441,39 +403,46 @@ input.numin { font-size: 30px !important; font-weight: 600 !important; font-vari
 
   function numField(id, value, label, unit, unitId) {
     return '<div class="field"><label class="lbl" for="' + id + '">' + label + '</label><div class="wrow">' +
-      '<input id="' + id + '" class="numin" type="text" inputmode="decimal" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" enterkeyhint="done" placeholder="0" value="' + esc(value) + '">' +
+      '<input id="' + id + '" class="numin" type="text" inputmode="decimal" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" enterkeyhint="done" value="' + esc(value) + '">' +
       '<span class="unit" id="' + (unitId || '') + '">' + unit + '</span></div></div>';
   }
 
-  function viewForm(ex) {
+  function viewPicker() {
+    var h = '<div class="top"><a class="circle" href="#" aria-label="Back">' + ICONS.back + '</a><span class="title">New exercise</span>' + blank() + '</div>';
+    h += '<h1 class="page-title">Choose a type</h1><div class="typegrid">' +
+      GROUPS.map(function (g) { return '<a class="typebtn" href="#new/' + g[0] + '">' + g[1] + '</a>'; }).join('') +
+      '<button type="button" class="typebtn custom" data-act="type-custom" aria-expanded="' + ui.customOpen + '">Custom</button></div>';
+    if (ui.customOpen) {
+      h += '<section class="panel pop"><div class="field"><label class="lbl" for="cName">Custom type</label><input id="cName" type="text" maxlength="' + CUSTOM_MAX + '" autocapitalize="words" autocomplete="off"></div>' +
+        '<p class="msg err" id="cErr" role="alert" hidden></p><button type="button" class="btn save" data-act="type-custom-go">Continue</button></section>';
+    }
+    return h;
+  }
+
+  function viewForm(ex, newGroup) {
     var isNew = !ex;
-    var unit = ex ? ex.unit : S.defaultUnit;
-    var group = ex ? ex.group : '';
-    ui.form = { touched: !isNew };
-    var h = '<div class="top"><a class="circle" href="' + (isNew ? '#' : '#' + ex.id) + '" aria-label="Back">' + ICONS.back + '</a><span class="title">' + (isNew ? 'New exercise' : 'Edit exercise') + '</span>' + blank() + '</div>';
-    h += '<form class="stack-lg" id="exForm" autocomplete="off" novalidate data-id="' + (ex ? ex.id : '') + '">' +
-      '<section class="panel"><div class="field"><label class="lbl" for="fName">Exercise</label><input id="fName" type="text" maxlength="60" placeholder="Chest press" autocapitalize="words" value="' + esc(ex ? ex.name : '') + '"></div>' +
-      '<div class="field"><label class="lbl" for="fBrand">Brand (optional)</label><input id="fBrand" type="text" maxlength="60" placeholder="Hammer Strength" autocapitalize="words" value="' + esc(ex ? ex.brand : '') + '"></div></section>' +
-      '<section class="panel"><span class="lbl" id="gLbl">Muscle group</span><div class="gchips" id="gChips" role="group" aria-labelledby="gLbl">' +
-      GROUPS.map(function (g) { return '<button type="button" class="gchip" data-act="form-group" data-g="' + g[0] + '" aria-pressed="' + (group === g[0]) + '">' + g[1] + '</button>'; }).join('') +
-      '</div><p class="hint" id="gHint"></p></section>' +
-      '<section class="panel"><span class="lbl">Unit for this exercise</span>' + unitSeg('fUnit', unit, 'form-unit') +
-      (isNew ? numField('fWeight', '', 'Starting weight', unit, 'fUnitLbl') : '') + '</section>';
+    var h = '<div class="top"><a class="circle" href="' + (isNew ? '#new' : '#' + ex.id) + '" aria-label="Back">' + ICONS.back + '</a><span class="title">' + (isNew ? 'New exercise' : 'Edit exercise') + '</span>' + blank() + '</div>';
+    if (isNew) h += '<a class="gpill" href="#new" aria-label="Change type"><b>' + esc(groupLabel(newGroup)) + '</b><span>Change</span></a>';
+    h += '<form class="stack-lg" id="exForm" autocomplete="off" novalidate data-id="' + (ex ? ex.id : '') + '" data-group="' + esc(isNew ? newGroup : '') + '">' +
+      '<section class="panel"><div class="field"><label class="lbl" for="fName">Exercise</label><input id="fName" type="text" maxlength="60" autocapitalize="words" value="' + esc(ex ? ex.name : '') + '"></div>' +
+      '<div class="field"><label class="lbl" for="fBrand">Brand (optional)</label><input id="fBrand" type="text" maxlength="60" autocapitalize="words" value="' + esc(ex ? ex.brand : '') + '"></div></section>';
+    if (!isNew) {
+      var isCustom = !!ex.group && !GNAME[ex.group];
+      h += '<section class="panel"><span class="lbl" id="gLbl">Type</span><div class="gchips" id="gChips" role="group" aria-labelledby="gLbl">' +
+        GROUPS.map(function (g) { return '<button type="button" class="gchip" data-act="form-group" data-g="' + g[0] + '" aria-pressed="' + (ex.group === g[0]) + '">' + g[1] + '</button>'; }).join('') +
+        '<button type="button" class="gchip" data-act="form-group" data-g="__custom" aria-pressed="' + isCustom + '">Custom</button></div>' +
+        '<div class="field" id="gCustomBox"' + (isCustom ? '' : ' hidden') + '><label class="lbl" for="fCustom">Custom type</label><input id="fCustom" type="text" maxlength="' + CUSTOM_MAX + '" autocapitalize="words" value="' + esc(isCustom ? ex.group : '') + '"></div></section>';
+    }
+    h += '<section class="panel"><span class="lbl">Unit</span>' + unitSeg('fUnit', ex ? ex.unit : '', 'form-unit') +
+      (isNew ? numField('fWeight', '', 'Starting weight', '', 'fUnitLbl') : '<p class="hint">Only the label changes. Your numbers stay as typed.</p>') + '</section>';
     if (isNew) {
       h += '<section class="panel"><span class="lbl">Setup (optional)</span>' +
-        '<div class="field"><label class="lbl" for="fSeat">Seat height</label><input id="fSeat" type="text" maxlength="40" placeholder="5 notch, 3 stack, 12 cm" autocapitalize="off" autocorrect="off"></div>' +
-        '<div class="field"><label class="lbl" for="fNotes">Notes</label><textarea id="fNotes" rows="3" maxlength="300" placeholder="Back pad 2, handles wide"></textarea></div></section>';
+        '<div class="field"><label class="lbl" for="fSeat">Seat height</label><input id="fSeat" type="text" maxlength="40" autocapitalize="off" autocorrect="off"></div>' +
+        '<div class="field"><label class="lbl" for="fNotes">Notes</label><textarea id="fNotes" rows="3" maxlength="300"></textarea></div></section>';
     }
     h += '<p class="msg err" id="fErr" role="alert" hidden></p>';
-    h += '<button class="btn primary" type="submit" id="fSave">' + (isNew ? 'Save exercise' : 'Save changes') + '</button>';
-    if (!isNew) {
-      h += '<section class="panel pop" id="unitAsk" hidden><p>Unit changed to <b id="unitAskTo"></b>. Convert your saved weights (rounded to the nearest <span id="unitAskStep"></span>), or keep the numbers and only change the label?</p>' +
-        '<div class="stack"><button type="button" class="btn primary sm" data-act="edit-convert">Convert weights</button>' +
-        '<button type="button" class="btn ghost sm" data-act="edit-keep">Keep numbers</button>' +
-        '<button type="button" class="btn ghost sm" data-act="edit-unit-cancel">Cancel</button></div></section>';
-      h += '<div id="delBox"><button type="button" class="btn ghost sm" data-act="del-ask">Delete exercise</button></div>' +
-        '<section class="panel pop" id="delAsk" hidden><p>Delete ' + esc(ex.name) + ' and its history?</p><div class="stack"><button type="button" class="btn danger sm" data-act="del-yes">Delete</button><button type="button" class="btn ghost sm" data-act="del-no">Keep</button></div></section>';
-    }
+    h += '<button class="btn save" type="submit" id="fSave">' + (isNew ? 'Save exercise' : 'Save changes') + '</button>';
+    if (!isNew) h += '<button type="button" class="link danger" id="delBtn" data-act="del">Delete exercise</button>';
     return h + '</form>';
   }
 
@@ -493,43 +462,35 @@ input.numin { font-size: 30px !important; font-weight: 600 !important; font-vari
       '<circle class="dot" cx="' + x(last).toFixed(1) + '" cy="' + y(vals[last]).toFixed(1) + '" r="5"/></svg>';
   }
 
-  function chipsFor(u) { return u === 'lb' ? [2.5, 5, 10, 20] : [1.25, 2.5, 5, 10]; }
-
   function viewDetail(ex) {
-    var st = stats(ex), n = age(ex), lvl = staleLevel(n);
+    var st = stats(ex), t = deltaText(st, ex.unit);
     var h = '<div class="top"><a class="circle" href="#" aria-label="All exercises">' + ICONS.back + '</a><span class="title"></span><a class="circle" href="#e-' + ex.id + '" aria-label="Edit exercise">' + ICONS.edit + '</a></div>';
-    h += '<div class="hero"><div class="eyebrow">' + GNAME[ex.group] + '</div><h1>' + esc(ex.name) + '</h1>' + (ex.brand ? '<div class="brand-line">' + esc(ex.brand) + '</div>' : '') +
-      '<div class="bignum"><span id="bigNum">' + fmt(st.cur) + '</span><small>' + ex.unit + '</small></div>' +
-      '<div class="change"><div class="stat ' + st.cls + '">' + statIcon(st.cls) + '<span>' + deltaText(st, ex.unit) + '</span>' +
-      (st.delta !== 0 ? '<span class="since">since ' + dateLabel(st.since) + ' (' + fmt(st.first) + ')</span>' : '') + '</div>' +
-      '<div class="fresh s' + lvl + '"><i></i>Updated ' + ago(n) + '</div></div></div>';
+    h += '<div class="hero"><h1>' + esc(ex.name) + '</h1>' + (ex.brand ? '<div class="brand-line">' + esc(ex.brand) + '</div>' : '') +
+      '<div class="bigrow"><div class="bignum"><span id="bigNum">' + fmt(st.cur) + '</span><small>' + ex.unit + '</small></div>' +
+      (ex.entries.length > 1 ? '<button type="button" class="undo" data-act="undo" aria-label="Undo last weight change">' + ICONS.undo + '</button>' : '') + '</div>' +
+      '<div class="stat ' + st.cls + '">' + statIcon(st.cls) + (t ? '<span>' + t + '</span>' : '') + '</div></div>';
+
+    /* setup: seat height + notes, above the chart so it is easy to see */
+    h += '<section class="panel setup-panel"><div class="cardhead"><h3>Setup</h3>' + (ui.setupEdit ? '' : '<button type="button" class="link white" data-act="setup-edit">Edit</button>') + '</div>';
+    if (ui.setupEdit) {
+      h += '<div class="field"><label class="lbl" for="sSeat">Seat height</label><input id="sSeat" type="text" maxlength="40" autocapitalize="off" autocorrect="off" value="' + esc(ex.seat) + '"></div>' +
+        '<div class="field"><label class="lbl" for="sNotes">Notes</label><textarea id="sNotes" rows="3" maxlength="300">' + esc(ex.notes) + '</textarea></div>' +
+        '<div class="stack"><button type="button" class="btn save sm" data-act="setup-save">Save</button><button type="button" class="btn ghost sm" data-act="setup-cancel">Cancel</button></div>';
+    } else {
+      h += '<div class="kv"><span>Seat height</span><b>' + (ex.seat ? esc(ex.seat) : '<span class="dim">Not set</span>') + '</b></div>' +
+        (ex.notes ? '<p class="notes">' + esc(ex.notes) + '</p>' : '<p class="notes dim">No notes</p>');
+    }
+    h += '</section>';
+
     h += spark(ex.entries);
 
     if (ui.editing) {
       h += '<div class="panel pop">' + numField('uWeight', fmt(st.cur), 'New weight', ex.unit, '') +
-        '<div class="chips">' + ['', '-'].map(function (sg) {
-          return '<div class="chip-row">' + chipsFor(ex.unit).map(function (c) {
-            return '<button type="button" class="chip" data-act="chip" data-v="' + sg + c + '" aria-label="' + (sg ? 'Subtract ' : 'Add ') + fmt(c) + '">' + (sg ? '−' : '+') + fmt(c) + '</button>';
-          }).join('') + '</div>';
-        }).join('') + '</div>' +
-        '<div class="pvrow"><div class="preview" id="uPreview" aria-live="polite"></div><button type="button" class="link" id="uUndo" data-act="undo-chip" disabled>Undo</button></div>' +
         '<div class="stack"><button type="button" class="btn primary" id="uSave" data-act="save-weight">Save new weight</button>' +
         '<button type="button" class="btn ghost sm" data-act="cancel-edit">Cancel</button></div></div>';
     } else {
       h += '<button type="button" class="btn primary" data-act="edit">Update weight</button>';
     }
-
-    /* setup: seat height + notes */
-    h += '<section class="panel"><div class="cardhead"><h3>Setup</h3>' + (ui.setupEdit ? '' : '<button type="button" class="link" data-act="setup-edit">Edit</button>') + '</div>';
-    if (ui.setupEdit) {
-      h += '<div class="field"><label class="lbl" for="sSeat">Seat height</label><input id="sSeat" type="text" maxlength="40" placeholder="5 notch, 3 stack, 12 cm" autocapitalize="off" autocorrect="off" value="' + esc(ex.seat) + '"></div>' +
-        '<div class="field"><label class="lbl" for="sNotes">Notes</label><textarea id="sNotes" rows="3" maxlength="300" placeholder="Back pad 2, handles wide">' + esc(ex.notes) + '</textarea></div>' +
-        '<div class="stack"><button type="button" class="btn primary sm" data-act="setup-save">Save</button><button type="button" class="btn ghost sm" data-act="setup-cancel">Cancel</button></div>';
-    } else {
-      h += '<div class="kv"><span>Seat height</span><b>' + (ex.seat ? esc(ex.seat) : '<span class="dim">Not set</span>') + '</b></div>' +
-        (ex.notes ? '<p class="notes">' + esc(ex.notes) + '</p>' : '<p class="dim">No notes yet.</p>');
-    }
-    h += '</section>';
 
     h += '<div class="history"><h2>History</h2><ul class="hlist">' + ex.entries.slice().reverse().map(function (e, i) {
       var idx = ex.entries.length - 1 - i;
@@ -537,30 +498,20 @@ input.numin { font-size: 30px !important; font-weight: 600 !important; font-vari
         return '<li><div class="hedit pop">' + numField('hWeight', fmt(e.w), 'Weight', ex.unit, '') +
           '<div class="field"><label class="lbl" for="hDate">Date</label><input id="hDate" type="date" value="' + e.d + '"></div>' +
           '<p class="msg err" id="hErr" role="alert" hidden></p>' +
-          '<div class="stack"><button type="button" class="btn primary sm" data-act="hist-save">Save</button>' +
+          '<div class="stack"><button type="button" class="btn save sm" data-act="hist-save">Save</button>' +
           (ex.entries.length > 1 ? '<button type="button" class="btn ghost sm" data-act="hist-delete">Delete this entry</button>' : '') +
           '<button type="button" class="btn ghost sm" data-act="hist-cancel">Cancel</button></div></div></li>';
       }
       var dd = idx > 0 ? round2(e.w - ex.entries[idx - 1].w) : null;
       var cls = dd === null ? 'flat' : dd > 0 ? 'up' : dd < 0 ? 'down' : 'flat';
-      var txt = dd === null ? 'Start' : dd === 0 ? '0' : sign(dd) + fmt(Math.abs(dd));
-      return '<li><button type="button" class="hrow" data-act="hist-edit" data-i="' + idx + '" aria-label="Edit entry from ' + dateLabel(e.d) + '"><span class="d">' + dateLabel(e.d) + '</span><span class="hw">' + fmt(e.w) + '</span><span class="hd ' + cls + '">' + txt + '</span></button></li>';
+      var txt = dd === null ? 'Start' : dd === 0 ? '0 ' + ex.unit : sign(dd) + fmt(Math.abs(dd)) + ' ' + ex.unit;
+      return '<li><button type="button" class="hrow" data-act="hist-edit" data-i="' + idx + '" aria-label="Edit entry from ' + daysLabel(e.d) + '"><span class="d">' + daysLabel(e.d) + '</span><span class="hw">' + fmt(e.w) + '<small>' + ex.unit + '</small></span><span class="hd ' + cls + '">' + txt + '</span></button></li>';
     }).join('') + '</ul></div>';
-
-    if (ex.entries.length > 1) h += '<div class="foot"><button type="button" class="link" data-act="undo">Undo last update</button></div>';
     return h;
   }
 
   function viewSettings() {
     var h = '<div class="top"><a class="circle" href="#" aria-label="Back">' + ICONS.back + '</a><span class="title">Settings</span>' + blank() + '</div>';
-
-    h += '<section class="panel"><h2>Default unit</h2>' + unitSeg('sUnit', S.defaultUnit, 'default-unit') +
-      '<p class="hint">New exercises start with this unit. Your existing exercises keep theirs. Change an exercise’s unit from its edit screen.</p></section>';
-
-    h += '<section class="panel"><h2>Haptics</h2><div class="seg" role="group" aria-label="Haptics">' +
-      '<button type="button" data-act="haptics" data-v="on" aria-pressed="' + (S.haptics !== false) + '">On</button>' +
-      '<button type="button" data-act="haptics" data-v="off" aria-pressed="' + (S.haptics === false) + '">Off</button></div>' +
-      '<p class="hint">A light tap when you press a button. It uses an unofficial iPhone trick, so it may stop working after an iOS update.</p></section>';
 
     var last = S.lastBackup ? new Date(S.lastBackup).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) : 'never';
     h += '<section class="panel"><h2>Backup</h2><p class="hint">Last backup: ' + last + '. Your records live only on this device, so export a copy now and then.</p>' +
@@ -568,10 +519,10 @@ input.numin { font-size: 30px !important; font-weight: 600 !important; font-vari
       '<button type="button" class="btn ghost sm" data-act="import">Import backup</button>' +
       '<input class="vh" id="importFile" type="file" accept="application/json,.json" tabindex="-1" aria-label="Choose backup file"></div>';
     if (ui.pending) {
-      h += '<div class="confirm-block"><p>Replace your current data (' + S.exercises.length + ' exercise' + (S.exercises.length === 1 ? '' : 's') + ') with this backup (' +
+      h += '<div class="stack"><p>Replace your current data (' + S.exercises.length + ' exercise' + (S.exercises.length === 1 ? '' : 's') + ') with this backup (' +
         ui.pending.exercises.length + ' exercise' + (ui.pending.exercises.length === 1 ? '' : 's') + ')?</p>' +
-        '<div class="stack"><button type="button" class="btn primary sm" data-act="import-yes">Replace my data</button>' +
-        '<button type="button" class="btn ghost sm" data-act="import-no">Cancel</button></div></div>';
+        '<button type="button" class="btn primary sm" data-act="import-yes">Replace my data</button>' +
+        '<button type="button" class="btn ghost sm" data-act="import-no">Cancel</button></div>';
     }
     if (ui.msg) h += '<p class="msg ' + ui.msg.t + '" role="status">' + esc(ui.msg.s) + '</p>';
     h += '</section>';
@@ -590,7 +541,11 @@ input.numin { font-size: 30px !important; font-weight: 600 !important; font-vari
   var app = document.getElementById('app');
   function current() {
     var id = location.hash.replace('#', '');
-    if (id === 'new') return { type: 'new' };
+    if (id === 'new') return { type: 'picker' };
+    if (id.indexOf('new/') === 0) {
+      var g = ''; try { g = normalizeGroup(decodeURIComponent(id.slice(4))); } catch (err) { g = ''; }
+      return g ? { type: 'new', group: g } : { type: 'picker' };
+    }
     if (id === 'settings') return { type: 'settings' };
     if (id.indexOf('e-') === 0) { var e = findEx(id.slice(2)); return e ? { type: 'edit', ex: e } : { type: 'home' }; }
     var ex = findEx(id);
@@ -598,9 +553,8 @@ input.numin { font-size: 30px !important; font-weight: 600 !important; font-vari
   }
   function render(animate) {
     app.className = 'app' + (animate && !reduced() ? ' enter' : '');
-    if (!S.defaultUnit) { app.innerHTML = viewSetup(); return; }
     var c = current();
-    app.innerHTML = c.type === 'new' ? viewForm(null) : c.type === 'edit' ? viewForm(c.ex) : c.type === 'settings' ? viewSettings() : c.type === 'detail' ? viewDetail(c.ex) : viewHome();
+    app.innerHTML = c.type === 'picker' ? viewPicker() : c.type === 'new' ? viewForm(null, c.group) : c.type === 'edit' ? viewForm(c.ex) : c.type === 'settings' ? viewSettings() : c.type === 'detail' ? viewDetail(c.ex) : viewHome();
     if (c.type === 'detail') {
       if (ui.editing) updatePreview();
       if (ui.roll) { var r = ui.roll; ui.roll = null; rollTo(document.getElementById('bigNum'), r.from, r.to); }
@@ -623,16 +577,13 @@ input.numin { font-size: 30px !important; font-weight: 600 !important; font-vari
     requestAnimationFrame(step);
   }
 
+  /* Save stays disabled until the typed weight is valid and different from the current one. */
   function updatePreview() {
     var c = current(); if (c.type !== 'detail') return;
-    var inp = document.getElementById('uWeight'), pv = document.getElementById('uPreview'), btn = document.getElementById('uSave');
-    if (!inp || !pv) return;
-    var ub = document.getElementById('uUndo'); if (ub) ub.disabled = !ui.stack.length;
+    var inp = document.getElementById('uWeight'), btn = document.getElementById('uSave');
+    if (!inp || !btn) return;
     var v = parseNum(inp.value), cur = c.ex.entries[c.ex.entries.length - 1].w;
-    if (!validW(v)) { pv.textContent = ''; btn.disabled = true; return; }
-    var d = round2(v - cur);
-    btn.disabled = d === 0;
-    pv.innerHTML = '<b>' + fmt(cur) + '</b> → <b>' + fmt(v) + '</b> ' + c.ex.unit + (d !== 0 ? ' (' + sign(d) + fmt(Math.abs(d)) + ')' : '');
+    btn.disabled = !validW(v) || round2(v - cur) === 0;
   }
 
   /* ---------- form helpers ---------- */
@@ -647,50 +598,35 @@ input.numin { font-size: 30px !important; font-weight: 600 !important; font-vari
   }
   function formErr(msg) { var el = $('fErr'); if (!el) return; el.textContent = msg; el.hidden = !msg; }
   function readForm() {
+    var form = $('exForm'), edit = !!form.getAttribute('data-id'), pick = edit ? pressedOf('gChips', 'data-g') : '', g;
+    if (edit) g = pick === '__custom' ? normalizeGroup($('fCustom').value) : pick;
+    else g = normalizeGroup(form.getAttribute('data-group'));
     return {
       name: $('fName').value.trim(), brand: $('fBrand').value.trim(),
-      group: pressedOf('gChips', 'data-g'), unit: pressedOf('fUnit', 'data-u'),
+      group: g, pick: pick, unit: pressedOf('fUnit', 'data-u'),
       w: $('fWeight') ? parseNum($('fWeight').value) : null,
       seat: $('fSeat') ? $('fSeat').value.trim() : '', notes: $('fNotes') ? $('fNotes').value.trim() : ''
     };
   }
 
-  function convertEntries(ex, to) {
-    var step = to === 'kg' ? 0.25 : 0.5, f = to === 'kg' ? 0.45359237 : 1 / 0.45359237;
-    ex.entries.forEach(function (en) { en.w = Math.max(step, round2(Math.round(en.w * f / step) * step)); });
-  }
-
   function submitForm() {
     var form = $('exForm'), id = form.getAttribute('data-id'), f = readForm();
     if (!f.name) { formErr('Enter an exercise name.'); return; }
-    if (!f.group) { formErr('Pick a muscle group.'); return; }
+    if (!f.unit) { formErr('Pick lb or kg.'); return; }
+    if (id && f.pick === '__custom' && !f.group) { formErr('Enter a custom type.'); return; }
     if (!id) {
       if (!validW(f.w)) { formErr('Enter a starting weight, like 72.5.'); return; }
-      S.exercises.push({ id: uid(), name: f.name, brand: f.brand, group: f.group, unit: f.unit || S.defaultUnit, seat: f.seat.slice(0, 40), notes: f.notes.slice(0, 300), entries: [{ d: iso(new Date()), w: round2(f.w) }] });
+      S.exercises.push({ id: uid(), name: f.name, brand: f.brand, group: f.group, unit: f.unit, seat: f.seat.slice(0, 40), notes: f.notes.slice(0, 300), entries: [{ d: iso(new Date()), w: round2(f.w) }] });
       persist(); location.hash = ''; return;
     }
     var ex = findEx(id); if (!ex) return;
-    if (f.unit && f.unit !== ex.unit) {
-      $('unitAskTo').textContent = f.unit;
-      $('unitAskStep').textContent = f.unit === 'kg' ? '0.25 kg' : '0.5 lb';
-      $('unitAsk').hidden = false; $('fSave').hidden = true; formErr('');
-      $('unitAsk').scrollIntoView({ block: 'nearest', behavior: reduced() ? 'auto' : 'smooth' });
-      return;
-    }
-    applyEdit(null);
-  }
-  function applyEdit(mode) {
-    var form = $('exForm'), ex = findEx(form.getAttribute('data-id')); if (!ex) return;
-    var f = readForm();
-    if (!f.name || !f.group) { formErr(!f.name ? 'Enter an exercise name.' : 'Pick a muscle group.'); return; }
-    ex.name = f.name; ex.brand = f.brand; ex.group = f.group;
-    if (f.unit && f.unit !== ex.unit) { if (mode === 'convert') convertEntries(ex, f.unit); ex.unit = f.unit; }
+    ex.name = f.name; ex.brand = f.brand; ex.group = f.group; ex.unit = f.unit;
     persist(); location.hash = ex.id;
   }
 
   /* ---------- backup ---------- */
   function backupJson() {
-    return JSON.stringify({ app: 'weight-notes', version: 2, exportedAt: new Date().toISOString(), defaultUnit: S.defaultUnit, exercises: S.exercises }, null, 2);
+    return JSON.stringify({ app: 'weight-notes', version: 4, exportedAt: new Date().toISOString(), exercises: S.exercises }, null, 2);
   }
   function markBackup() { S.lastBackup = Date.now(); persist(); }
 
@@ -737,15 +673,11 @@ input.numin { font-size: 30px !important; font-weight: 600 !important; font-vari
       if (clean !== t.value) t.value = clean;
       if (t.id === 'uWeight') updatePreview();
     }
-    if (t.id === 'fName' && ui.form && !ui.form.touched) {
-      var g = classify(t.value);
-      setPressed('gChips', 'data-g', g || '');
-      var hint = $('gHint'); if (hint) hint.textContent = g ? 'Suggested from the name. Tap a group to change it.' : '';
-    }
   });
 
   document.addEventListener('keydown', function (e) {
     if (e.key === 'Enter' && e.target.id === 'uWeight') { var b = $('uSave'); if (b && !b.disabled) b.click(); }
+    if (e.key === 'Enter' && e.target.id === 'cName') { e.preventDefault(); var cg = document.querySelector('[data-act="type-custom-go"]'); if (cg) cg.click(); }
     if (e.key === 'Enter' && e.target.id === 'hWeight') { var h = document.querySelector('[data-act="hist-save"]'); if (h) h.click(); }
   });
 
@@ -773,53 +705,52 @@ input.numin { font-size: 30px !important; font-weight: 600 !important; font-vari
     rd.readAsText(f);
   });
 
+  var delTimer = null;
   document.addEventListener('click', function (e) {
     var t = e.target.closest('[data-act]'); if (!t) return;
     var act = t.getAttribute('data-act');
 
-    if (act === 'setup-unit') {
-      S.defaultUnit = t.getAttribute('data-u'); persist();
-      try { if (navigator.storage && navigator.storage.persist) navigator.storage.persist(); } catch (err) {}
-      render(true); return;
-    }
     if (act === 'hint-dismiss') { S.hintDismissed = true; persist(); render(false); return; }
 
     /* form (new / edit) */
+    if (act === 'type-custom') { ui.customOpen = !ui.customOpen; render(false); return; }
+    if (act === 'type-custom-go') {
+      var cn = normalizeGroup($('cName').value), ce = $('cErr');
+      if (!cn) { ce.textContent = 'Type a name for your custom type.'; ce.hidden = false; return; }
+      location.hash = '#new/' + encodeURIComponent(cn); return;
+    }
     if (act === 'form-group') {
-      setPressed('gChips', 'data-g', t.getAttribute('data-g'));
-      if (ui.form) ui.form.touched = true;
-      var gh = $('gHint'); if (gh) gh.textContent = '';
+      var gv = t.getAttribute('data-g');
+      setPressed('gChips', 'data-g', gv);
+      var box = $('gCustomBox'); if (box) box.hidden = gv !== '__custom';
       formErr(''); return;
     }
     if (act === 'form-unit') {
       var u = t.getAttribute('data-u'); setPressed('fUnit', 'data-u', u);
       var lbl = $('fUnitLbl'); if (lbl) lbl.textContent = u;
-      return;
+      formErr(''); return;
     }
-    if (act === 'edit-convert') { applyEdit('convert'); return; }
-    if (act === 'edit-keep') { applyEdit('keep'); return; }
-    if (act === 'edit-unit-cancel') {
-      var ex0 = findEx($('exForm').getAttribute('data-id'));
-      if (ex0) setPressed('fUnit', 'data-u', ex0.unit);
-      $('unitAsk').hidden = true; $('fSave').hidden = false; return;
-    }
-    if (act === 'del-ask') { $('delBox').hidden = true; $('delAsk').hidden = false; return; }
-    if (act === 'del-no') { $('delAsk').hidden = true; $('delBox').hidden = false; return; }
-    if (act === 'del-yes') {
+    if (act === 'del') {
+      var btn = $('delBtn');
+      if (!ui.delArmed) {
+        ui.delArmed = true; btn.textContent = 'Tap again to delete';
+        clearTimeout(delTimer);
+        delTimer = setTimeout(function () { ui.delArmed = false; var b = $('delBtn'); if (b) b.textContent = 'Delete exercise'; }, 4000);
+        return;
+      }
+      clearTimeout(delTimer);
       var id0 = $('exForm').getAttribute('data-id');
       S.exercises = S.exercises.filter(function (x) { return x.id !== id0; });
       persist(); location.hash = ''; return;
     }
 
     /* settings */
-    if (act === 'default-unit') { S.defaultUnit = t.getAttribute('data-u'); persist(); render(false); return; }
-    if (act === 'haptics') { S.haptics = t.getAttribute('data-v') === 'on'; persist(); render(false); if (S.haptics) haptic(); return; }
     if (act === 'export') { exportBackup(); return; }
     if (act === 'import') { var fi = $('importFile'); if (fi) fi.click(); return; }
     if (act === 'import-no') { ui.pending = null; render(false); return; }
     if (act === 'import-yes') {
       if (!ui.pending) return;
-      S.defaultUnit = ui.pending.defaultUnit; S.exercises = ui.pending.exercises;
+      S.exercises = ui.pending.exercises;
       var n = S.exercises.length; ui.pending = null; persist();
       ui.msg = { t: 'ok', s: 'Imported ' + n + ' exercise' + (n === 1 ? '' : 's') + '.' }; render(false); return;
     }
@@ -831,19 +762,8 @@ input.numin { font-size: 30px !important; font-weight: 600 !important; font-vari
     var c = current();
     if (c.type !== 'detail') return;
     var ex = c.ex;
-    if (act === 'edit') { ui.editing = true; ui.stack = []; render(false); }
-    else if (act === 'cancel-edit') { ui.editing = false; ui.stack = []; render(false); }
-    else if (act === 'chip') {
-      var inp = $('uWeight'); var base = parseNum(inp.value);
-      if (!isFinite(base)) base = ex.entries[ex.entries.length - 1].w;
-      var next = round2(base + parseFloat(t.getAttribute('data-v')));
-      if (!(next > 0)) return;
-      ui.stack.push(inp.value); inp.value = fmt(next); updatePreview();
-    }
-    else if (act === 'undo-chip') {
-      var inp2 = $('uWeight');
-      if (ui.stack.length) { inp2.value = ui.stack.pop(); updatePreview(); }
-    }
+    if (act === 'edit') { ui.editing = true; render(false); }
+    else if (act === 'cancel-edit') { ui.editing = false; render(false); }
     else if (act === 'save-weight') {
       var v = parseNum($('uWeight').value);
       if (!validW(v)) return;
@@ -851,7 +771,7 @@ input.numin { font-size: 30px !important; font-weight: 600 !important; font-vari
       var prev = ex.entries[ex.entries.length - 1].w;
       if (v === prev) return;
       ex.entries.push({ d: iso(new Date()), w: v });
-      persist(); ui.editing = false; ui.stack = []; ui.roll = { from: prev, to: v }; render(false);
+      persist(); ui.editing = false; ui.roll = { from: prev, to: v }; render(false);
     }
     else if (act === 'undo') { if (ex.entries.length > 1) { ex.entries.pop(); persist(); render(false); } }
     else if (act === 'setup-edit') { ui.setupEdit = true; render(false); }
@@ -874,7 +794,7 @@ input.numin { font-size: 30px !important; font-weight: 600 !important; font-vari
     }
   });
 
-  window.addEventListener('hashchange', function () { resetUi(); render(true); window.scrollTo(0, 0); });
+  window.addEventListener('hashchange', function () { clearTimeout(delTimer); resetUi(); render(true); window.scrollTo(0, 0); });
 
   render(true);
 
