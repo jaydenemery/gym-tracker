@@ -211,6 +211,9 @@ input.numin { font-size: 30px !important; font-weight: 600 !important; font-vari
 .quick-add {width:34px;height:34px;border-radius:11px;border:1px solid #3b4143;background:#2b3032;color:#fff;font-size:23px;line-height:1;flex:none}
 .list-view {grid-template-columns:1fr}.list-view .card {min-height:84px;display:grid;grid-template-columns:1fr auto;align-items:center;gap:12px}.list-view .cval {font-size:27px;margin-top:5px}.list-view .card-foot {margin:0;gap:10px}
 .modal-backdrop {position:fixed;inset:0;background:rgba(0,0,0,.72);z-index:50;display:flex;align-items:flex-end;justify-content:center;padding:16px 16px calc(env(safe-area-inset-bottom,0px) + 16px)}
+.modal-backdrop {align-items:center;overflow-y:auto;overscroll-behavior:contain;}
+.quick-modal {max-height:calc(100dvh - 40px);overflow-y:auto;}
+.quick-modal .numin {font-size:22px;min-height:58px;}
 .quick-modal {background:#1c2022;border:1px solid #343a3d;border-radius:22px;padding:18px;width:min(100%,480px);display:flex;flex-direction:column;gap:18px}
 .quick-head {display:flex;justify-content:space-between;align-items:center;gap:10px}.quick-head h2 {font-size:18px;line-height:1.25}
 .optional {display:flex;flex-direction:column;gap:12px}.optional summary {font-size:14px;color:var(--muted);cursor:pointer}.optional[open] .field {margin-top:12px}
@@ -219,6 +222,15 @@ input.numin { font-size: 30px !important; font-weight: 600 !important; font-vari
 .setup-panel .notes {font-size:14px;line-height:1.5;color:#e2e5e6;border-top:1px solid var(--line);padding-top:10px}
 .setup-panel .lbl {font-size:13px;color:var(--muted);font-weight:500}.setup-panel .field input {min-height:46px;font-size:16px}.setup-panel .field textarea {min-height:68px;font-size:16px}
 .setup-panel .btn {min-height:44px}
+.weight-actions {display:flex;gap:9px;justify-content:flex-end;margin-top:-10px}
+.action-small {font-size:13px;padding:9px 13px;background:var(--surface);border:1px solid var(--line);border-radius:10px;color:var(--ink)}
+.action-small:disabled {opacity:.3}
+.range-row {display:flex;gap:8px;justify-content:flex-end}
+.range-chip {padding:9px 13px;min-width:52px;background:var(--surface);border:1px solid var(--line);border-radius:10px;color:var(--muted);font-size:13px}
+.range-chip[aria-pressed=true] {background:#4ed093;color:#0c0e0f;font-weight:700}
+.history-toggle {width:100%;display:flex;justify-content:space-between;align-items:center;padding:15px 16px;border:1px solid var(--line);border-radius:14px;background:var(--surface);color:var(--ink);font-size:15px;font-weight:600;text-align:left}
+.history-toggle span {font-size:12px;color:var(--muted);font-weight:400}
+.history .hlist {margin-top:10px}
 </style>
 </head>
 <body>
@@ -233,9 +245,9 @@ input.numin { font-size: 30px !important; font-weight: 600 !important; font-vari
   var storageOK = true;
 
   /* The user picks the type by hand when adding an exercise. A type is one of these keys, or a custom name they typed. */
-  var GROUPS = [['chest', 'Chest'], ['back', 'Back'], ['shoulder', 'Shoulder'], ['arms', 'Arms'], ['legs', 'Legs'], ['core', 'Core']];
+  var GROUPS = [['chest', 'Chest'], ['back', 'Back'], ['shoulder', 'Shoulder'], ['bicep', 'Bicep'], ['tricep', 'Tricep'], ['legs', 'Legs'], ['core', 'Core']];
   var GNAME = {}; GROUPS.forEach(function (g) { GNAME[g[0]] = g[1]; });
-  var LEGACY = { tricep: 'arms', bicep: 'arms', triceps: 'arms', biceps: 'arms', shoulders: 'shoulder', leg: 'legs', abs: 'core', abdominals: 'core' };
+  var LEGACY = { triceps: 'tricep', biceps: 'bicep', shoulders: 'shoulder', leg: 'legs', abs: 'core', abdominals: 'core' };
   var CUSTOM_MAX = 24;
   function normalizeGroup(g) {
     g = String(g == null ? '' : g).replace(/\s+/g, ' ').trim().slice(0, CUSTOM_MAX).trim();
@@ -354,8 +366,21 @@ input.numin { font-size: 30px !important; font-weight: 600 !important; font-vari
   persist(); // writes migrated groups back so they are stable
 
   var ui = {};
-  function resetUi() { ui = { customOpen: false, editing: false, pending: null, confirmWipe: false, msg: null, setupEdit: false, hist: -1, form: null, roll: null, delArmed: false, filter: 'All', search: '', quick: null, quickError: '' }; }
+  function resetUi() { ui = { customOpen: false, editing: false, pending: null, confirmWipe: false, msg: null, setupEdit: false, hist: -1, form: null, roll: null, delArmed: false, filter: 'All', search: '', quick: null, quickError: '', chartRange: '30', historyOpen: false }; }
   resetUi();
+  var weightActions = {};
+  function recordWeightAction(ex, newEntries) {
+    var a = weightActions[ex.id] || (weightActions[ex.id] = {undo:[], redo:[]});
+    a.undo.push(ex.entries.map(function(e){return {d:e.d,w:e.w};}));
+    if(a.undo.length>30) a.undo.shift();
+    a.redo=[]; ex.entries=newEntries; persist();
+  }
+  function travelWeight(ex, direction) {
+    var a=weightActions[ex.id]; if(!a || !a[direction].length) return;
+    var other=direction==='undo'?'redo':'undo';
+    a[other].push(ex.entries.map(function(e){return {d:e.d,w:e.w};}));
+    ex.entries=a[direction].pop(); persist(); render(false);
+  }
 
   function stats(ex) {
     var first = ex.entries[0].w, cur = ex.entries[ex.entries.length - 1].w;
@@ -412,9 +437,9 @@ input.numin { font-size: 30px !important; font-weight: 600 !important; font-vari
   }
 
   function viewHome() {
-    var h = '<div class="home-head"><a class="circle" href="#settings" aria-label="Settings">' + ICONS.sliders + '</a><div class="home-heading"><strong>Progo</strong><small>Your exercise tracker</small></div><button class="circle" type="button" data-act="layout" aria-label="Switch layout">' + (S.layout === 'list' ? '▦' : '☷') + '</button><a class="circle" href="#new" aria-label="Add exercise">' + ICONS.plus + '</a></div>';
+    var h = '<div class="home-head"><a class="circle" href="#settings" aria-label="Settings">' + ICONS.sliders + '</a><div class="home-heading"></div><button class="circle" type="button" data-act="layout" aria-label="Switch layout">' + (S.layout === 'list' ? '▦' : '☷') + '</button><a class="circle" href="#new" aria-label="Add exercise">' + ICONS.plus + '</a></div>';
     h += '<input id="homeSearch" class="home-search" type="search" placeholder="Search exercises..." aria-label="Search exercises" value="' + esc(ui.search) + '">';
-    h += '<div class="filter-row" role="group" aria-label="Muscle group filters">' + ['All'].concat(GROUPS.map(function(g){return g[1];}),['Custom']).map(function(g){return '<button type="button" class="filter-chip" data-act="filter" data-filter="' + g + '" aria-pressed="' + (ui.filter === g) + '">' + g + '</button>';}).join('') + '</div>';
+    h += '<div class="filter-row" role="group" aria-label="Muscle group filters">' + ['All'].concat(GROUPS.map(function(g){return g[1];}),['Arms','Custom']).map(function(g){return '<button type="button" class="filter-chip" data-act="filter" data-filter="' + g + '" aria-pressed="' + (ui.filter === g) + '">' + g + '</button>';}).join('') + '</div>';
     h += '<div id="homeResults"></div>';
     if (!storageOK) h += '<p class="msg err">Storage unavailable. Export a backup in Settings.</p>';
     if (showInstallHint()) h += '<div class="note"><span>Install: Share → Add to Home Screen. The installed app has separate storage from Safari.</span><button type="button" class="link" data-act="hint-dismiss">Got it</button></div>';
@@ -428,8 +453,8 @@ input.numin { font-size: 30px !important; font-weight: 600 !important; font-vari
     var el = $('homeResults'); if (!el) return;
     var term = ui.search.trim().toLowerCase();
     var selected = S.exercises.filter(function(ex){
-      var category = GNAME[ex.group] || 'Custom';
-      return (ui.filter === 'All' || ui.filter === category) && (!term || ex.name.toLowerCase().indexOf(term) !== -1);
+      var category = GNAME[ex.group] || (ex.group === 'arms' ? 'Arms' : 'Custom');
+      return (ui.filter === 'All' || ui.filter === category || (ui.filter === 'Arms' && ['bicep','tricep','arms'].indexOf(ex.group) !== -1)) && (!term || ex.name.toLowerCase().indexOf(term) !== -1);
     });
     var buckets = {}, order = [];
     selected.forEach(function(ex){ var group = GNAME[ex.group] || ex.group || 'Other'; if (!buckets[group]) {buckets[group]=[];order.push(group);} buckets[group].push(ex); });
@@ -498,10 +523,15 @@ input.numin { font-size: 30px !important; font-weight: 600 !important; font-vari
     var h = '<div class="top"><a class="circle" href="#" aria-label="All exercises">' + ICONS.back + '</a><span class="title"></span><a class="circle" href="#e-' + ex.id + '" aria-label="Edit exercise">' + ICONS.edit + '</a></div>';
     h += '<div class="hero"><h1>' + esc(ex.name) + '</h1>' + (ex.brand ? '<div class="brand-line">' + esc(ex.brand) + '</div>' : '') +
       '<div class="bigrow"><div class="bignum"><span id="bigNum">' + fmt(st.cur) + '</span><small>' + ex.unit + '</small></div>' +
-      (ex.entries.length > 1 ? '<button type="button" class="undo" data-act="undo" aria-label="Undo last weight change">' + ICONS.undo + '</button>' : '') + '</div>' +
+      '' + '</div>' +
       '<div class="stat ' + st.cls + '">' + statIcon(st.cls) + (t ? '<span>' + t + '</span>' : '') + '</div></div>';
 
-    h += spark(ex.entries);
+    var actions=weightActions[ex.id] || {undo:[],redo:[]};
+    h += '<div class="weight-actions"><button type="button" class="action-small" data-act="undo" ' + (actions.undo.length?'':'disabled') + '>↶ Undo</button><button type="button" class="action-small" data-act="redo" ' + (actions.redo.length?'':'disabled') + '>↷ Redo</button></div>';
+    h += '<div class="range-row" role="group" aria-label="Chart time range">' + [['7','1W'],['30','1M'],['90','3M'],['365','1Y']].map(function(r){return '<button type="button" class="range-chip" data-act="chart-range" data-range="'+r[0]+'" aria-pressed="'+(ui.chartRange===r[0])+'">'+r[1]+'</button>';}).join('') + '</div>';
+    var cutoff=new Date(); cutoff.setHours(0,0,0,0); cutoff.setDate(cutoff.getDate()-Number(ui.chartRange)+1);
+    var ranged=ex.entries.filter(function(e){var d=new Date(e.d+'T12:00:00');return d>=cutoff;});
+    h += ranged.length ? spark(ranged) : '<p class="hint center">No weight entries in this period.</p>';
     /* setup: seat height + notes, above the chart so it is easy to see */
     h += '<section class="panel setup-panel"><div class="cardhead"><h3>Machine setup</h3>' + (ui.setupEdit ? '<button type="button" class="link" data-act="setup-cancel">Cancel</button>' : '<button type="button" class="link white" data-act="setup-edit">✎ Edit</button>') + '</div>';
     if (ui.setupEdit) {
@@ -523,7 +553,7 @@ input.numin { font-size: 30px !important; font-weight: 600 !important; font-vari
       h += '<button type="button" class="btn primary" data-act="edit">Update weight</button>';
     }
 
-    h += '<div class="history"><h2>History</h2><ul class="hlist">' + ex.entries.slice().reverse().map(function (e, i) {
+    h += '<div class="history"><button type="button" class="history-toggle" data-act="history-toggle" aria-expanded="' + ui.historyOpen + '">Weight history <span>' + ex.entries.length + ' entries ' + (ui.historyOpen ? '⌃' : '⌄') + '</span></button>' + (ui.historyOpen ? '<ul class="hlist">' : '') + (ui.historyOpen ? ex.entries.slice().reverse().map(function (e, i) {
       var idx = ex.entries.length - 1 - i;
       if (ui.hist === idx) {
         return '<li><div class="hedit pop">' + numField('hWeight', fmt(e.w), 'Weight', ex.unit, '') +
@@ -537,7 +567,7 @@ input.numin { font-size: 30px !important; font-weight: 600 !important; font-vari
       var cls = dd === null ? 'flat' : dd > 0 ? 'up' : dd < 0 ? 'down' : 'flat';
       var txt = dd === null ? 'Start' : dd === 0 ? '0 ' + ex.unit : sign(dd) + fmt(Math.abs(dd)) + ' ' + ex.unit;
       return '<li><button type="button" class="hrow" data-act="hist-edit" data-i="' + idx + '" aria-label="Edit entry from ' + daysLabel(e.d) + '"><span class="d">' + daysLabel(e.d) + '</span><span class="hw">' + fmt(e.w) + '<small>' + ex.unit + '</small></span><span class="hd ' + cls + '">' + txt + '</span></button></li>';
-    }).join('') + '</ul></div>';
+    }).join('') + '</ul>' : '') + '</div>';
     return h;
   }
 
@@ -583,10 +613,12 @@ input.numin { font-size: 30px !important; font-weight: 600 !important; font-vari
     return ex ? { type: 'detail', ex: ex } : { type: 'home' };
   }
   function render(animate) {
+    var previousScroll=window.scrollY;
     app.className = 'app' + (animate && !reduced() ? ' enter' : '');
     var c = current();
     app.innerHTML = c.type === 'picker' ? viewPicker() : c.type === 'new' ? viewForm(null, c.group) : c.type === 'edit' ? viewForm(c.ex) : c.type === 'settings' ? viewSettings() : c.type === 'detail' ? viewDetail(c.ex) : viewHome();
     if (c.type === 'home') refreshHomeResults();
+    if (!animate) window.scrollTo(0,previousScroll);
     if (c.type === 'detail') {
       if (ui.editing) updatePreview();
       if (ui.roll) { var r = ui.roll; ui.roll = null; rollTo(document.getElementById('bigNum'), r.from, r.to); }
@@ -746,9 +778,9 @@ input.numin { font-size: 30px !important; font-weight: 600 !important; font-vari
 
     if (act === 'filter') { ui.filter = t.getAttribute('data-filter'); document.querySelectorAll('.filter-chip').forEach(function(b){b.setAttribute('aria-pressed',String(b.getAttribute('data-filter') === ui.filter));}); refreshHomeResults(); return; }
     if (act === 'layout') { S.layout = S.layout === 'grid' ? 'list' : 'grid'; persist(); render(false); return; }
-    if (act === 'quick-open') { ui.quick = t.getAttribute('data-id'); ui.quickError = ''; render(false); var qi = $('quickWeight'); if(qi) { qi.focus(); qi.select(); } return; }
+    if (act === 'quick-open') { var oldScroll=window.scrollY; ui.quick = t.getAttribute('data-id'); ui.quickError = ''; render(false); window.scrollTo(0,oldScroll); var qi = $('quickWeight'); if(qi) { qi.focus({preventScroll:true}); qi.select(); } return; }
     if (act === 'quick-cancel') { ui.quick = null; render(false); return; }
-    if (act === 'quick-save') { var qe = findEx(ui.quick), qw = $('quickWeight') && parseNum($('quickWeight').value); if (!qe || !validW(qw)) { ui.quickError = 'Enter a valid weight.'; var er = $('quickError'); if(er){er.textContent=ui.quickError;er.hidden=false;} return; } qw=round2(qw); if(qw !== stats(qe).cur){qe.entries.push({d:iso(new Date()),w:qw});persist();} ui.quick=null; render(false); return; }
+    if (act === 'quick-save') { var qe = findEx(ui.quick), qw = $('quickWeight') && parseNum($('quickWeight').value); if (!qe || !validW(qw)) { ui.quickError = 'Enter a valid weight.'; var er = $('quickError'); if(er){er.textContent=ui.quickError;er.hidden=false;} return; } qw=round2(qw); if(qw !== stats(qe).cur){recordWeightAction(qe,qe.entries.concat([{d:iso(new Date()),w:qw}]));} ui.quick=null; render(false); return; }
     if (act === 'hint-dismiss') { S.hintDismissed = true; persist(); render(false); return; }
 
     /* form (new / edit) */
@@ -809,17 +841,19 @@ input.numin { font-size: 30px !important; font-weight: 600 !important; font-vari
       v = round2(v);
       var prev = ex.entries[ex.entries.length - 1].w;
       if (v === prev) return;
-      ex.entries.push({ d: iso(new Date()), w: v });
-      persist(); ui.editing = false; ui.roll = { from: prev, to: v }; render(false);
+      recordWeightAction(ex, ex.entries.concat([{ d: iso(new Date()), w: v }])); ui.editing = false; ui.roll = { from: prev, to: v }; render(false);
     }
-    else if (act === 'undo') { if (ex.entries.length > 1) { ex.entries.pop(); persist(); render(false); } }
+    else if (act === 'undo') { travelWeight(ex,'undo'); }
+    else if (act === 'redo') { travelWeight(ex,'redo'); }
+    else if (act === 'chart-range') { ui.chartRange=t.getAttribute('data-range'); render(false); }
+    else if (act === 'history-toggle') { ui.historyOpen=!ui.historyOpen; render(false); }
     else if (act === 'setup-edit') { ui.setupEdit = true; render(false); }
     else if (act === 'setup-cancel') { ui.setupEdit = false; render(false); }
     else if (act === 'setup-save') {
       ex.seat = $('sSeat').value.trim().slice(0, 40); ex.notes = $('sNotes').value.trim().slice(0, 300);
       persist(); ui.setupEdit = false; render(false);
     }
-    else if (act === 'hist-edit') { ui.hist = parseInt(t.getAttribute('data-i'), 10); render(false); }
+    else if (act === 'hist-edit') { ui.hist = parseInt(t.getAttribute('data-i'), 10); ui.historyOpen=true; render(false); }
     else if (act === 'hist-cancel') { ui.hist = -1; render(false); }
     else if (act === 'hist-delete') {
       if (ex.entries.length > 1 && ui.hist > -1) { ex.entries.splice(ui.hist, 1); persist(); ui.hist = -1; render(false); }

@@ -3,7 +3,7 @@
    After that it serves from the cache and refreshes the cache in the background,
    so a new deploy shows up the next time the app is opened after one launch. */
 
-var CACHE = 'progo-v6'; // bump this when you add or rename files below
+var CACHE = 'progo-v7'; // bump this when you add or rename files below
 
 var ASSETS = [
   './',
